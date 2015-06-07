@@ -57,6 +57,8 @@ trait Patterns {
       json.string
   }
 
+  //TODO handle infinite, NaN
+
   implicit val longPattern:Pattern[Long] = new RequiredValuePattern[Long]("long") {
     def unapply(json: Json): Option[Long] =
       json.number.collect {
@@ -64,7 +66,7 @@ trait Patterns {
       }
 
     def apply(t: Long): Json =
-      jNumber(t)
+      jNumberOrString(t)
   }
 
   implicit val intPattern:Pattern[Int] = new RequiredValuePattern[Int]("int") {
@@ -74,7 +76,7 @@ trait Patterns {
       }
 
     def apply(t: Int): Json =
-      jNumber(t)
+      jNumberOrString(t)
   }
 
   implicit val doublePattern:Pattern[Double] = new RequiredValuePattern[Double]("double") {
@@ -82,7 +84,7 @@ trait Patterns {
       json.number
 
     def apply(t: Double): Json =
-      jNumber(t)
+      jNumberOrString(t)
   }
 
   implicit val float:Pattern[Float] = new RequiredValuePattern[Float]("float") {
@@ -92,7 +94,7 @@ trait Patterns {
       }
 
     def apply(t: Float): Json =
-      jNumber(t)
+      jNumberOrString(t)
   }
 
   implicit val jsonPattern:Pattern[Json] = new RequiredValuePattern[Json]("json"){

@@ -62,7 +62,7 @@ trait SimpleValidator[+T] extends Validator[T] {
 }
 
 trait JsonValidators {
-  import DefaultPatterns._
+  import Patterns._
 
   val immutable = new SimpleValidator[Nothing] {
     def maybeValid(path:Path) = {

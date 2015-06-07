@@ -6,7 +6,7 @@ import Argonaut._
 //Migrated to Argonaut as is, might be possible to replace with Argonaut functionality
 trait Functions extends Any {
   /**
-   * Concatenate and replace json structure with delta, where a JNull or Empty JObject value will clear the key value pair
+   * Concatenate and replace json structure with delta, where a JNull or returning an Empty JObject value will clear the key value pair
    * @param delta
    * @return
    */
@@ -14,11 +14,16 @@ trait Functions extends Any {
     (target.obj, delta.obj) match {
       case (Some(ot), Some(od)) =>
         jObject(od.toList.foldLeft(ot)({
-          case (acc, (k, j)) if j.isNull | j == jEmptyObject =>
+          case (acc, (k, j)) if j.isNull =>
             acc - k
           case (acc, (k, v)) => acc(k) match {
             case None => acc + (k, v)
-            case Some(l) => acc + (k, applyDelta(l, v))
+            case Some(l) =>
+              val d = applyDelta(l, v)
+              if (d == jEmptyObject)
+                acc - k
+              else
+                acc + (k, d)
           }
         }))
       case _ =>
