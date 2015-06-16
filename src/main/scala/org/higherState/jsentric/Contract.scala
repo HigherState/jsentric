@@ -2,6 +2,8 @@ package org.higherState.jsentric
 
 import argonaut._
 import Argonaut._
+import shapeless._
+import shapeless.ops.hlist._
 
 trait SelfApply {
   def apply[R](f:this.type => R):R = f(this)
@@ -16,6 +18,7 @@ abstract class Contract(implicit pattern:Pattern[JsonObject]) extends BaseContra
 
   def unapply(j:Json):Option[JsonObject] =
     pattern.unapply(j)
+
 }
 
 abstract class ContractType(val key:String, val matcher:Matcher = DefaultMatcher)(implicit pattern:Pattern[JsonObject]) extends BaseContract {
@@ -85,7 +88,6 @@ object \ {
 }
 
 object \? {
-
   def apply[T](path:Path, validator:Validator[Option[T]] = EmptyValidator)(implicit parentPath:Path, pattern:Pattern[Option[T]]) =
     new Maybe[T](path, parentPath ++ path, validator)(pattern)
 }
@@ -106,3 +108,58 @@ case class \:[T](path:Path, override val validator:Validator[Seq[T]] = EmptyVali
 
 case class \:?[T](path:Path, override val validator:Validator[Option[Seq[T]]] = EmptyValidator)(implicit parentPath:Path, pattern:Pattern[Option[Seq[T]]], val seqPattern:Pattern[Seq[Json]], val elementPattern:Pattern[T])
   extends Maybe[Seq[T]](path, parentPath ++ path, validator)(pattern)
+
+
+trait Evaluator[L <: HList] {
+  type Out <: HList
+
+  def apply(json:Json, l:L):Option[Out]
+}
+
+object Evaluator {
+
+  type JExt[T] = Json => Option[T]
+  type Aux[T <: HList, O <: HList] = Evaluator[T]{ type Out = O }
+
+  implicit val evaluatorHNil:Evaluator[HNil] = new Evaluator[HNil] {
+    type Out = HNil
+
+    def apply(json:Json, l:HNil) = Some(HNil)
+  }
+
+  implicit def evalHCons[H, T <: HList](implicit flT: Evaluator[T]): Evaluator[JExt[H] :: T] =
+    new Evaluator[JExt[H] :: T] {
+      type Out = H :: flT.Out
+
+      def apply(json:Json, l: JExt[H] :: T):Option[Out] =
+        for {
+          h <- l.head(json)
+          t <- flT(json, l.tail)
+        } yield h :: t
+    }
+}
+
+object ExtractorCompositor {
+
+  def join[L <: HList, O <: HList, T](maybes: L)(implicit ev: Evaluator.Aux[L, O], tpl:Tupler.Aux[O, T]) =
+    new JsonList(maybes, ev, tpl)
+
+  def temp[L <: HList, T <: HList](json:Json, maybes: L)(implicit ev: Evaluator.Aux[L, T]):Option[T] =
+    ev.apply(json, maybes)
+
+  def tupled[L <: HList, T](list:L)(implicit tp:Tupler.Aux[L, T]) =
+    tp.apply(list)
+
+  class JsonList[L <: HList, O <: HList, T](maybes: L, ev: Evaluator.Aux[L, O], tpl:Tupler.Aux[O, T]) {
+
+    def unapply(json:Json):Option[T] = {
+      ev.apply(json, maybes).map{hl =>
+        tpl.apply(hl)
+      }
+    }
+  }
+
+}
+
+
+
