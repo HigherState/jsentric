@@ -5,13 +5,11 @@ import Argonaut._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, FunSuite}
 import shapeless._
-import shapeless.ops.hlist.Tupler
-
 
 /**
  * Created by jamie on 11/06/15.
  */
-class ExtractorCompositorTests  extends FunSuite with Matchers with ScalaFutures {
+class ExtractorCompositorTests  extends FunSuite with Matchers {
   import Patterns._
   import ExtractorCompositor._
   import Evaluator._
@@ -20,27 +18,20 @@ class ExtractorCompositorTests  extends FunSuite with Matchers with ScalaFutures
   object TestObj extends Contract {
     val int = \[Int]("int")
     val bool = \[Boolean]("bool")
+    val string = \[String]("string")
 
-//    val pair = join(
-//      ((j:Json) => TestObj.int.unapply(j)) :: ((j:Json) => TestObj.bool.unapply(j)) :: HNil)
-
-
+    lazy val composite = join(TestObj.string @: TestObj.int @: TestObj.bool)
   }
 
   test("Messing about") {
-    val json = Json("int" := 1, "bool" := false)
-    val hList = ((j:Json) => TestObj.int.unapply(j)) :: ((j:Json) => TestObj.bool.unapply(j)) :: HNil
-    println(temp(json, hList))
-    println(tupled(1 :: false :: HNil))
-    //println(temp(json, hList).map(tupled(_)))
+    val json = Json("int" := 1, "bool" := false, "string" := "Test")
 
-    //println(join(hList).unapply(json))
-
-//    println(TestObj.pair.unapply(json))
-//
-//    json match {
-//      case TestObj.pair(i, b) => println("matched")
-//    }
+    json match {
+      case TestObj.composite(s, i, b) =>
+        s should equal ("Test")
+        i should equal (1)
+        b should equal (false)
+    }
   }
 
 }

@@ -14,8 +14,51 @@ trait Query extends Functions with Lens {
   implicit def valueQuery[T](prop:Property[T]) =
     new ValueQuery(prop)
 
+  implicit def maybeQuery[T](prop:Maybe[T]) =
+    new ValueQuery(prop)
+
   implicit def numericQuery[T >: JNumeric](prop:Property[T]) =
     new NumericQuery(prop)
+
+  implicit class ArrayQuery[T](val prop: Expected[Seq[T]])(implicit p:Pattern[T]) {
+
+    def $elemMatch(f:Property[T] => Json):Json =
+      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
+
+    private def nest(obj:Json) =
+      Query.pathToObject(prop.absolutePath.segments, obj)
+  }
+
+  implicit class MaybeArrayQuery[T](val prop: Maybe[Seq[T]])(implicit p:Pattern[T]) {
+
+    def $elemMatch(f:Property[T] => Json):Json =
+      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
+
+
+    private def nest(obj:Json) =
+      Query.pathToObject(prop.absolutePath.segments, obj)
+  }
+
+  implicit class SetQuery[T](val prop: Expected[Set[T]])(implicit p:Pattern[T]) {
+
+    def $elemMatch(f:Property[T] => Json):Json =
+      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
+
+
+    private def nest(obj:Json) =
+      Query.pathToObject(prop.absolutePath.segments, obj)
+  }
+
+  implicit class MaybeSetQuery[T](val prop: Maybe[Set[T]])(implicit p:Pattern[T]) {
+
+    def $elemMatch(f:Property[T] => Json):Json =
+      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
+
+    private def nest(obj:Json) =
+      Query.pathToObject(prop.absolutePath.segments, obj)
+  }
+
+
 }
 
 object Query {
@@ -43,6 +86,10 @@ object Query {
         !value.exists(j => values.exists(order.lift(_, j) == Ordering.EQ)) //nin doesnt require existence, as per mongodb
       case ("$exists", JBool(v)) =>
         value.isDefined == v
+      case ("$elemMatch", JObject(j)) =>
+        value.collect{ case JArray(seq) => seq.exists(s => apply(Some(s), j))}.getOrElse(false)
+      case ("$elemMatch", v) =>
+        value.collect{ case JArray(seq) => seq.contains(v)}.getOrElse(false)
       case (key, JObject(obj)) =>
         apply(value.flatMap(_.field(key)), obj)
       case (key, v) =>
@@ -87,15 +134,20 @@ class JsonQueryExt(val json:Json) extends AnyVal with Functions {
       }
     }.getOrElse(Json("$or" -> jArray(List(json, d))))
 }
-
+//Handle default?
 class ValueQuery[T](val prop: Property[T]) extends AnyVal {
 
   def $eq(value:T) = nest(prop.pattern.apply(value))
   def $ne(value:T) = nest(Json("$ne" -> prop.pattern.apply(value)))
   def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop.pattern.apply))))
   def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop.pattern.apply))))
-  def $exists(value:Boolean) = nest(Json("$exists" := value))
 
+  private def nest(obj:Json) =
+    Query.pathToObject(prop.absolutePath.segments, obj)
+}
+
+class MaybeQuery[T](val prop:Maybe[T]) extends AnyVal {
+  def $exists(value:Boolean) = nest(Json("$exists" := value))
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)
 }
@@ -117,3 +169,5 @@ class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)
 }
+
+

@@ -2,6 +2,7 @@ package org.higherState.jsentric
 
 import argonaut._
 import Argonaut._
+import scalaz.Scalaz._
 
 //Migrated to Argonaut as is, might be possible to replace with Argonaut functionality
 trait Functions extends Any {
@@ -28,6 +29,22 @@ trait Functions extends Any {
         }))
       case _ =>
         delta
+    }
+
+  def difference(delta:Json, source:Json):Option[Json] =
+    (delta, source) match {
+      case (d, s) if d == s =>
+        None
+      case (JObject(d), JObject(j)) =>
+        val s = j.toMap
+        val o = d.toList.flatMap { kvp =>
+          s.get(kvp._1).fold(Option(kvp)){ v =>
+            difference(kvp._2, v).map(kvp._1 -> _)
+          }
+        }
+        o.nonEmpty.option(Json(o:_*))
+      case (d, _) =>
+        Some(d)
     }
 
   @deprecated("Use argonaut deepmerge")

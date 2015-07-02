@@ -14,14 +14,17 @@ trait Lens extends Functions {
   implicit def contractTypeExt[T <: ContractType](c:T) =
     new ContractTypeExt(c)
 
-  implicit def valueLens[T](prop: Property[T]) =
-    new ValueLens(prop)
+  implicit def expectedLens[T](prop: Expected[T]) =
+    new ExpectedLens(prop)
+
+  implicit def maybeLens[T](prop: Maybe[T]) =
+    new MaybeLens(prop)
+
+  implicit def defaultLens[T](prop: Default[T]) =
+    new DefaultLens(prop)
 
   implicit def jsonLens[T](json:Json) =
     new JsonLens(json)
-
-  implicit def maybeLens[T](prop: Property[Option[T]]) =
-    new MaybeLens(prop)
 
   implicit def arrayLens[T](prop: \:[T]) =
     new ArrayLens(prop)
@@ -49,27 +52,80 @@ class ContractTypeExt[T <: ContractType](val c:T) extends AnyVal {
     Json(c.key -> c.matcher.default)
 }
 
-class ValueLens[T](val prop: Property[T]) extends AnyVal with Functions {
+sealed trait PropertyLens[T] extends Any with Functions {
+  def prop:Property[T]
 
   def $get(j:Json):Option[T] =
     getValue(j, prop.absolutePath.segments).flatMap(prop.pattern.unapply)
   def $set =
     (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.pattern(value))
+  def $maybeSet =
+    (value:Option[T]) => (j:Json) =>
+      value.fold(j) { v =>
+        setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+      }
+}
+
+class ExpectedLens[T](val prop: Expected[T]) extends AnyVal with PropertyLens[T] {
   //applies set if value is nonEmpty, does not drop on empty
-  def $optionSet =
-    (value:Option[T]) => (j:Json) => value.fold(j){v =>
+  def $modify =
+    (func:T => T) => (j:Json) =>
+      $get(j).fold[Json](j)(v => setValue(Some(j), prop.absolutePath.segments, prop.pattern(func(v))))
+  def $copy =
+    (p:Property[T]) => (j:Json) => {
+      getValue(j, prop.absolutePath.segments) match {
+        case None => j
+        case Some(value) =>
+          insertValue(Some(j), p.absolutePath.segments, value)
+      }
+    }
+}
+
+class MaybeLens[T](val prop: Maybe[T]) extends AnyVal with PropertyLens[T] {
+  def $drop =
+    (j:Json) => dropValue(j, prop.absolutePath.segments)
+  def $setOrDrop =
+    (value:Option[T]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
+      setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+    }
+  def $modify =
+    (func:Option[T] => Option[T]) => (j:Json) =>
+      $setOrDrop(func($get(j)))(j)
+  def $copy =
+    (p:Property[T]) => (j:Json) => {
+      getValue(j, prop.absolutePath.segments) match {
+        case None =>
+          j
+        case Some(value) =>
+          insertValue(Some(j), p.absolutePath.segments, value)
+      }
+    }
+}
+
+class DefaultLens[T](val prop: Default[T]) extends AnyVal with Functions {
+  def $get(j:Json):T =
+    getValue(j, prop.absolutePath.segments).flatMap(prop.pattern.unapply).getOrElse(prop.default)
+  def $set =
+    (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.pattern(value))
+  def $maybeSet =
+    (value:Option[T]) => (j:Json) =>
+      value.map { v =>
+        setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+      }
+  def $reset =
+    (j:Json) => dropValue(j, prop.absolutePath.segments)
+  def $resetOrDrop =
+    (value:Option[T]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
       setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
     }
   def $modify =
     (func:T => T) => (j:Json) =>
-      $get(j).fold[Json](j)(v => setValue(Some(j), prop.absolutePath.segments, prop.pattern(func(v))))
-  def $maybeModify =
-    (func:Option[T] => T) => (j:Json) =>
       setValue(Some(j), prop.absolutePath.segments, prop.pattern(func($get(j))))
   def $copy =
     (p:Property[T]) => (j:Json) => {
       getValue(j, prop.absolutePath.segments) match {
         case None =>
+          insertValue(Some(j), p.absolutePath.segments, prop.pattern(prop.default))
         case Some(value) =>
           insertValue(Some(j), p.absolutePath.segments, value)
       }
@@ -101,16 +157,9 @@ class JsonLens[T](val json:Json) extends AnyVal with Functions {
 
   def delta(delta:Json):Json =
     applyDelta(json, delta)
-}
 
-class MaybeLens[T](val prop: Property[Option[T]]) extends AnyVal with Functions {
-  def $drop =
-    (j:Json) => dropValue(j, prop.absolutePath.segments)
-
-  def $setOrDrop =
-    (value:Option[Option[T]]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
-      setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
-    }
+  def diff(source:Json):Option[Json] =
+    difference(json, source)
 }
 
 class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {

@@ -10,13 +10,14 @@ import scalaz.{\/-, \/}
 /**
  * Created by Jamie Pullar on 07/06/2015.
  */
-class ContractTests extends FunSuite with Matchers with ScalaFutures {
+class ContractTests extends FunSuite with Matchers {
   import Patterns._
 
   test("Contract pattern matching") {
     object Test extends Contract {
       val one = \[String]("one")
       val two = \?[Boolean]("two")
+      val three = \![Int]("three", 3)
     }
 
     (Json("one" := "string", "two" := false) match {
@@ -24,8 +25,8 @@ class ContractTests extends FunSuite with Matchers with ScalaFutures {
     }) should equal ("string" -> false)
 
     (Json("one" := "string") match {
-      case Test.one(s) && Test.two(None) => s
-    }) should equal ("string")
+      case Test.one(s) && Test.two(None) && Test.three(int) => s -> int
+    }) should equal ("string" -> 3)
 
     (Json("one" := 123) match {
       case Test.one(s) && Test.two(None) => s
@@ -36,6 +37,15 @@ class ContractTests extends FunSuite with Matchers with ScalaFutures {
       case Test.one(s) && Test.two(None) => s
       case Test.two(Some(false)) => "two match"
     }) should equal ("two match")
+
+    (Json("three" := 4) match {
+      case Test.three(i) => i
+    }) should equal (4)
+
+    (Json("three" := "not a number") match {
+      case Test.three(i) => i
+      case _ => "wrong type"
+    }) should equal ("wrong type")
   }
 
   test("Nested pattern matching") {
@@ -67,14 +77,39 @@ class ContractTests extends FunSuite with Matchers with ScalaFutures {
   test("Advanced patterns") {
     object Adv extends Contract {
       val tuple = \[(Int, String)]("tuple")
-      val dis = \[\/[String, (Float, Boolean)]] ("disrupt")
+      val disrupt = \[\/[String, (Float, Boolean)]] ("disrupt")
       val option = \[Option[Seq[Int]]]("option")
     }
-    val obj = Json("tuple" := List(jNumberOrString(45), jString("test")), "dis" := List(jNumberOrString(4.56), jFalse), "option" := List(1,2,3,4))
+    val obj = Json("tuple" := List(jNumberOrString(45), jString("test")), "disrupt" := List(jNumberOrString(4.56), jFalse), "option" := List(1,2,3,4))
     (obj match {
-      case Adv.tuple((l,r)) && Adv.dis(\/-((f, b))) =>
+      case Adv.tuple((l,r)) && Adv.disrupt(\/-((f, b))) =>
         (l,r, f, b)
-    }) should equal ((45, "test", 4.56, false))
+      case Adv.tuple((l,r)) =>
+        (l,r)
+    }) should equal ((45, "test", 4.56F, false))
+  }
+
+  test("Array pattern matching") {
+    object Arr extends Contract {
+      val exp = \:[String]("exp")
+      val maybe = \:?[Int]("maybe")
+    }
+
+    val obj1 = Json("exp" := List(jString("one"), jString("two")))
+    (obj1 match {
+      case Arr.exp(seq) => seq
+    }) should equal (List("one", "two"))
+
+    val obj2 = Json("exp" := List(jString("one"), jTrue))
+    (obj2 match {
+      case Arr.exp(seq) => seq
+      case _ => "wrong type"
+    }) should equal ("wrong type")
+
+    val obj3 = Json("maybe" := List(jNumber(1), jNumber(2)))
+    (obj3 match {
+      case Arr.maybe(seq) => seq
+    }) should equal (Seq(1, 2))
   }
 
 //  test("Recursive contract") {

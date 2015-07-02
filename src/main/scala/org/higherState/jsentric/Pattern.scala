@@ -171,6 +171,17 @@ trait Patterns {
     def schema = (TYPE := "array") ->: (ITEMS -> pattern.schema) ->: jEmptyObject
   }
 
+  implicit def setPattern[T](implicit seqExtractor:SeqExtractor[T], pattern:Pattern[T]) = new Pattern[Set[T]] {
+    def unapply(json: Json): Option[Set[T]] =
+      json.array.flatMap(seqExtractor.unapply).map(_.toSet)
+
+    def apply(t: Set[T]): Json =
+      jArray(t.map(pattern.apply).toList)
+
+    def schema = (TYPE := "array") ->: (ITEMS -> pattern.schema) ->: jEmptyObject
+  }
+
+
   implicit def optionPattern[T](implicit pattern:Pattern[T]) = new Pattern[Option[T]] {
     def unapply(json: Json): Option[Option[T]] = {
       if (json.isNull) Some(None)

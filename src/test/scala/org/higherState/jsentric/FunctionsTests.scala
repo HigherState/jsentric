@@ -8,7 +8,7 @@ import org.scalatest.concurrent.ScalaFutures
 /**
  * Created by Jamie Pullar on 07/06/2015.
  */
-class FunctionsTests extends FunSuite with Matchers with ScalaFutures with Functions {
+class FunctionsTests extends FunSuite with Matchers with Functions {
 
   test("Applying svalue delta on obj") {
     val obj = Json("one" := 1, "two" := "two")
@@ -59,5 +59,21 @@ class FunctionsTests extends FunSuite with Matchers with ScalaFutures with Funct
     setValue(Some(obj), Path("obj", "three", 5).segments, jNumberOrString(5)) should be (Json("one" := 1, "obj" -> Json("two" := false, "three" := List(jNumberOrString(1),jNumberOrString(2),jNumberOrString(3),jNumberOrString(4),jNull,jNumberOrString(5)), "four" -> Json("five" := 5))))
     setValue(Some(obj), Path("two", "three").segments, jString("set")) should be (Json("one" := 1, "two" -> Json("three" := "set"), "obj" -> Json("two" := false, "three" := List(1,2,3,4), "four" -> Json("five" := 5))))
     setValue(Some(obj), Path("two", 2).segments, jTrue)  should be (Json("one" := 1, "two" := List(jNull, jNull, jTrue), "obj" -> Json("two" := false, "three" := List(1,2,3,4), "four" -> Json("five" := 5))))
+  }
+
+  test("Get difference") {
+    val obj = Json("one" := 1, "obj" -> Json("two" := false, "three" := List(1,2,3,4), "four" -> Json("five" := 5)))
+    difference(obj, obj) should be (None)
+    difference(jEmptyObject, obj) should be (None)
+    difference(Json("one" := 1), obj) should be (None)
+    difference(Json("one" := 1, "obj" -> Json("two" := false)), obj) should be (None)
+    difference(Json("obj" -> Json("four" -> jEmptyObject)), obj) should be (None)
+    difference(Json("obj" -> Json("four" -> Json("five" := 5))), obj) should be (None)
+
+    difference(Json("one" := 2), obj) should be (Some(Json("one" := 2)))
+    difference(Json("six" := 6), obj) should be (Some(Json("six" := 6)))
+    difference(Json("obj" -> Json("four" -> Json("six" := 34.56))), obj) should be (Some(Json("obj" -> Json("four" -> Json("six" := 34.56)))))
+    difference(Json("obj" -> Json("two" := true, "three" := List(1,2,3,4))), obj) should be (Some(Json("obj" -> Json("two" := true))))
+    difference(Json("obj" -> Json("three" := List(1,2,3,4,5,6))), obj) should be (Some(Json("obj" -> Json("three" := List(1,2,3,4,5,6)))))
   }
 }
