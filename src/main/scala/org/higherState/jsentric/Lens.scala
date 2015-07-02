@@ -163,9 +163,10 @@ class JsonLens[T](val json:Json) extends AnyVal with Functions {
 }
 
 class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {
-  def $at(index:Int) = ArrayElement[T](index, prop.absolutePath)(prop.elementPattern)
+  def $at(index:Int) =
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementPattern)
 
-  def $head = ArrayElement[T](0, prop.absolutePath)(prop.elementPattern)
+  def $head = $at(0)
 
   def $append =
     (value:T) => (j:Json) =>
@@ -173,15 +174,16 @@ class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {
 
   def $prepend =
     (value:T) => (j:Json) =>
-      prop.seqPattern.apply(prop.elementPattern(value) +: current(j))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(prop.elementPattern(value) +: current(j)))
 
   protected def current(j:Json) = getValue(j, prop.absolutePath.segments).flatMap(prop.seqPattern.unapply).getOrElse(Seq.empty)
 }
 
 class MaybeArrayLens[T](val prop: \:?[T]) extends AnyVal with Functions {
-  def $at(index:Int) = ArrayElement[T](index, prop.absolutePath)(prop.elementPattern)
+  def $at(index:Int) =
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementPattern)
 
-  def $head = ArrayElement[T](0, prop.absolutePath)(prop.elementPattern)
+  def $head = $at(0)
 
   def $append =
     (value:T) => (j:Json) =>
@@ -189,14 +191,7 @@ class MaybeArrayLens[T](val prop: \:?[T]) extends AnyVal with Functions {
 
   def $prepend =
     (value:T) => (j:Json) =>
-      prop.seqPattern.apply(prop.elementPattern(value) +: current(j))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(prop.elementPattern(value) +: current(j)))
 
   protected def current(j:Json) = getValue(j, prop.absolutePath.segments).flatMap(prop.seqPattern.unapply).getOrElse(Seq.empty)
-}
-
-case class ArrayElement[T](index:Int, arrayPath:Path)(implicit val pattern:Pattern[T]) extends Property[T]  {
-
-  def relativePath: Path = Path(index)
-  def validator: Validator[T] = EmptyValidator
-  def absolutePath = arrayPath \ index
 }

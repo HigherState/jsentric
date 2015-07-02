@@ -90,10 +90,24 @@ class LensTests extends FunSuite with Matchers {
   }
 
   test("Expected array lens test") {
+    object ExpTest extends Contract {
+      val value = \:[Int]("value")
+      val value2 = \:[Int]("value2")
+    }
+    val withSome = Json("value" := List(jNumberOrNull(1),jNumberOrNull(2),jNumberOrNull(3)), "value2" := List(jNumberOrNull(2)))
+    val withNone = Json("value2" := List(jNumberOrNull(2)))
 
-  }
+    ExpTest.value.$at(2).$get(withSome) should be (Some(3))
+    ExpTest.value.$at(3).$get(withSome) should be (None)
+    ExpTest.value.$at(3).$get(withNone) should be (None)
 
-  test("Maybe array lens test") {
+    ExpTest.value.$at(2).$set(5)(withSome) should be (Json("value" := List(jNumberOrNull(1),jNumberOrNull(2),jNumberOrNull(5)), "value2" := List(jNumberOrNull(2))))
+    ExpTest.value.$at(6).$set(5)(withSome) should be (Json("value" := List(jNumberOrNull(1),jNumberOrNull(2),jNumberOrNull(3), jNull, jNull, jNull, jNumberOrNull(5)), "value2" := List(jNumberOrNull(2))))
 
+    ExpTest.value.$append(4)(withSome) should be (Json("value" := List(jNumberOrNull(1),jNumberOrNull(2),jNumberOrNull(3),jNumberOrNull(4)), "value2" := List(jNumberOrNull(2))))
+    ExpTest.value.$append(4)(withNone) should be (Json("value" := List(jNumberOrNull(4)), "value2" := List(jNumberOrNull(2))))
+
+    ExpTest.value.$prepend(0)(withSome) should be (Json("value" := List(jNumberOrNull(0),jNumberOrNull(1),jNumberOrNull(2),jNumberOrNull(3)), "value2" := List(jNumberOrNull(2))))
+    ExpTest.value.$prepend(0)(withNone) should be (Json("value" := List(jNumberOrNull(0)), "value2" := List(jNumberOrNull(2))))
   }
 }
