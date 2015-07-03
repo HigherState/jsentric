@@ -14,7 +14,7 @@ case class Path(segments:Segments) extends AnyVal {
 
 }
 
-object Path {
+object Path extends PathExt {
   type Mix = Int with String
   val empty = Path(Vector.empty)
 

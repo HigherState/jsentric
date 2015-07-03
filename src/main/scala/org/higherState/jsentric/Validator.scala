@@ -63,6 +63,7 @@ trait SimpleValidator[+T] extends Validator[T] {
 
 trait JsonValidators {
   import Patterns._
+  import Path._
 
   val immutable = new SimpleValidator[Nothing] {
     def maybeValid(path:Path) = {
@@ -270,6 +271,19 @@ trait JsonValidators {
       } getOrElse Seq.empty
 
     def schema = jEmptyObject //("items" -> contract.schema)
+  }
+
+  def values(contract:BaseContract) = new Validator[JOptionable[Map[String,Nothing]]] {
+    def validate(value: Option[Json], currentState: Option[Json], path: Path): Seq[(String, Path)] =
+      value collect {
+        case JObject(map) =>
+          map.toMap.flatMap{ kv =>
+            val current = currentState \ kv._1
+            new BaseContractValidation(contract).$validate(kv._2, current, path \ kv._1)
+          }.toSeq
+      } getOrElse Seq.empty[(String, Path)]
+
+    def schema = jEmptyObject
   }
 }
 

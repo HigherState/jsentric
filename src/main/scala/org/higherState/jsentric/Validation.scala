@@ -4,6 +4,9 @@ import argonaut._
 import scalaz._
 
 trait Validation extends Functions {
+  implicit def valueContractValidation[T](contract:ValueContract[T]) =
+    new ValueContractValidation[T](contract)
+
   implicit def baseContractValidation(contract:BaseContract) =
     new BaseContractValidation(contract)
 
@@ -12,20 +15,41 @@ trait Validation extends Functions {
 
 }
 
-object Validation extends Validation
-
-class BaseContractValidation(val contract:BaseContract) extends AnyVal with Functions {
-  def $validate(newContent:Json):JValid =
-    $validate(newContent, None, Path.empty) match {
-      case Nil => \/-(newContent)
+object Validation extends Validation {
+  def seqToJValid(seq:Seq[(String, Path)], json:Json) =
+    seq match {
+      case Nil => \/-(json)
       case failure +: failures => -\/(NonEmptyList(failure, failures:_*))
     }
+}
+
+class ValueContractValidation[T](val contract:ValueContract[T]) extends AnyVal {
+  import Validation._
+  def $validate(newContent:Json):JValid =
+    seqToJValid($validate(newContent, None, Path.empty), newContent)
 
   def $validate(deltaContent:Json, currentState:Json):JValid =
-    $validate(deltaContent, Some(currentState), Path.empty) match {
-      case Nil => \/-(deltaContent)
-      case failure +: failures => -\/(NonEmptyList(failure, failures:_*))
-    }
+    seqToJValid($validate(deltaContent, Some(currentState), Path.empty), deltaContent)
+  //TODO better approach here
+  def $validate(deltaContent:Json, currentState:Option[Json]):JValid =
+    seqToJValid($validate(deltaContent, currentState, Path.empty), deltaContent)
+
+  def $validate(value: Json, currentState: Option[Json], path:Path): Seq[(String, Path)] =
+    contract.validator.validate(Some(value), currentState, path)
+
+  def $sanitize(json:Json):Json = ???
+}
+
+class BaseContractValidation(val contract:BaseContract) extends AnyVal with Functions {
+  import Validation._
+  def $validate(newContent:Json):JValid =
+    seqToJValid($validate(newContent, None, Path.empty), newContent)
+
+  def $validate(deltaContent:Json, currentState:Json):JValid =
+    seqToJValid($validate(deltaContent, Some(currentState), Path.empty), deltaContent)
+
+  def $validate(deltaContent:Json, currentState:Option[Json]):JValid =
+    seqToJValid($validate(deltaContent, currentState, Path.empty), deltaContent)
   //TODO better approach here
   def $validate(value: Json, currentState: Option[Json], path:Path): Seq[(String, Path)] =
     ValidationPropertyCache.getProperties(contract).flatMap{p =>
