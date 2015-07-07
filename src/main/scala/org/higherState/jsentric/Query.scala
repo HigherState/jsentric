@@ -15,7 +15,7 @@ trait Query extends Functions with Lens {
     new ValueQuery(prop)
 
   implicit def maybeQuery[T](prop:Maybe[T]) =
-    new ValueQuery(prop)
+    new MaybeQuery(prop)
 
   implicit def numericQuery[T >: JNumeric](prop:Property[T]) =
     new NumericQuery(prop)

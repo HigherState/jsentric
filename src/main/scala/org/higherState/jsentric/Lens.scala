@@ -57,6 +57,7 @@ sealed trait PropertyLens[T] extends Any with Functions {
 
   def $get(j:Json):Option[T] =
     getValue(j, prop.absolutePath.segments).flatMap(prop.pattern.unapply)
+
   def $set =
     (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.pattern(value))
   def $maybeSet =

@@ -112,6 +112,27 @@ class ContractTests extends FunSuite with Matchers {
     }) should equal (Seq(1, 2))
   }
 
+  test("Dynamic property") {
+    object Dyn extends Contract {
+       val nest = new \\("nest") {}
+    }
+
+    val dynamic1 = Dyn.$dynamic[Int]("int")
+    (jEmptyObject match {
+      case dynamic1(i) => i
+    }) should be (None)
+
+    (Json("int" := 4) match {
+      case dynamic1(i) => i
+    }) should be (Some(4))
+
+    val dynamic2 = Dyn.nest.$dynamic[Boolean]("bool")
+
+    (Json("nested" -> Json("bool" := true)) match {
+      case dynamic2(b) => b
+    }) should be (Some(true))
+  }
+
 //  test("Recursive contract") {
 //    trait Recursive extends SubContract {
 //      val level = \[Int]("level")
