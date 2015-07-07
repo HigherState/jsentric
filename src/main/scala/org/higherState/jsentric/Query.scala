@@ -69,21 +69,21 @@ object Query {
       case ("$or", JArray(values)) =>
         values.flatMap(_.obj).exists(apply(value, _))
       case ("$eq", v) =>
-        value.exists(_ == v)
+        value.contains(v)
       case ("$ne", v) =>
-        !value.exists(_ == v) //neq doesnt require existence, as per mongodb
+        !value.contains(v) //neq doesnt require existence, as per mongodb
       case ("$lt", v) =>
-        value.exists(order.lift(_, v).exists(_ == Ordering.LT))
+        value.exists(order.lift(_, v).contains(Ordering.LT))
       case ("$gt", v) =>
-        value.exists(order.lift(_, v).exists(_ == Ordering.GT))
+        value.exists(order.lift(_, v).contains(Ordering.GT))
       case ("$lte", v) =>
         value.exists(order.lift(_, v).exists(r => r == Ordering.LT || r == Ordering.EQ))
       case ("$gte", v) =>
         value.exists(order.lift(_, v).exists(r => r == Ordering.GT || r == Ordering.EQ))
       case ("$in", JArray(values)) =>
-        value.exists(j => values.exists(order.lift(_, j) == Ordering.EQ))
+        value.exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
       case ("$nin", JArray(values)) =>
-        !value.exists(j => values.exists(order.lift(_, j) == Ordering.EQ)) //nin doesnt require existence, as per mongodb
+        !value.exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ))) //nin doesnt require existence, as per mongodb
       case ("$exists", JBool(v)) =>
         value.isDefined == v
       case ("$elemMatch", JObject(j)) =>
@@ -114,9 +114,9 @@ object Query {
 
 class JsonQueryExt(val json:Json) extends AnyVal with Functions {
   def isMatch(value:Json) =
-    value.obj.fold(json == value){o => Query.apply(Some(value), o)}
+    json.obj.fold(json == value){o => Query.apply(Some(value), o)}
 
-  def &&(d:Json) =
+  def &&(d:Json):Json =
     json.obj.collect{
       case obj if (obj ?? "$or") && d.objectFields.exists(_.contains("$or")) =>
         Json("$and" -> jArray(List(json, d)))
@@ -127,8 +127,8 @@ class JsonQueryExt(val json:Json) extends AnyVal with Functions {
         }.getOrElse(Json("$and" -> obj("$and").get.concat(d)))
     }.getOrElse(applyDelta(json, d))
 
-  def ||(d:Json) =
-    json.obj.map{o =>
+  def ||(d:Json):Json =
+    json.obj.flatMap{o =>
       o("$or").flatMap{j =>
         j.array.map(a => Json("$or" -> jArray(a :+ d)))
       }
@@ -138,6 +138,7 @@ class JsonQueryExt(val json:Json) extends AnyVal with Functions {
 class ValueQuery[T](val prop: Property[T]) extends AnyVal {
 
   def $eq(value:T) = nest(prop.pattern.apply(value))
+  //Currently not supporting chaining of $ne in an && for the same field
   def $ne(value:T) = nest(Json("$ne" -> prop.pattern.apply(value)))
   def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop.pattern.apply))))
   def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop.pattern.apply))))
