@@ -68,6 +68,7 @@ class QueryTests extends FunSuite with Matchers {
     }
 
     val query1 = Query3.doubles.$elemMatch(_.$gt(4))
+    println(query1.pretty(PrettyParams.nospace))
     query1.isMatch(Json("doubles" := (3.asJson -->>: 5.asJson -->>: jEmptyArray))) should be (true)
     query1.isMatch(Json("doubles" := (2.asJson -->>: 4.asJson -->>: jEmptyArray))) should be (false)
     query1.isMatch(Json("doubles" := jEmptyArray)) should be (false)

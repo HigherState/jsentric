@@ -155,17 +155,17 @@ class MaybeQuery[T](val prop:Maybe[T]) extends AnyVal {
 
 class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
 
-  def $lt(value:Double) = nest(Json("$lt" := value))
-  def $lt(value:Long) = nest(Json("$lt" := value))
+  def $lt(value:Double) = nest(Json("$lt" -> jNumberOrString(value)))
+  def $lt(value:Long) = nest(Json("$lt" -> jNumberOrString(value)))
 
-  def $gt(value:Double) = nest(Json("$gt" := value))
-  def $gt(value:Long) = nest(Json("$gt" := value))
+  def $gt(value:Double) = nest(Json("$gt" -> jNumberOrString(value)))
+  def $gt(value:Long) = nest(Json("$gt" -> jNumberOrString(value)))
 
-  def $lte(value:Double) = nest(Json("$lt" := value))
-  def $lte(value:Long) = nest(Json("$lt" := value))
+  def $lte(value:Double) = nest(Json("$lt" -> jNumberOrString(value)))
+  def $lte(value:Long) = nest(Json("$lt" -> jNumberOrString(value)))
 
-  def $gte(value:Double) = nest(Json("$gt" := value))
-  def $gte(value:Long) = nest(Json("$gt" := value))
+  def $gte(value:Double) = nest(Json("$gt" -> jNumberOrString(value)))
+  def $gte(value:Long) = nest(Json("$gt" -> jNumberOrString(value)))
 
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)

@@ -98,7 +98,7 @@ class ContractTests extends FunSuite with Matchers {
     val obj1 = Json("exp" := List(jString("one"), jString("two")))
     (obj1 match {
       case Arr.exp(seq) => seq
-    }) should equal (List("one", "two"))
+    }) should equal (Seq("one", "two"))
 
     val obj2 = Json("exp" := List(jString("one"), jTrue))
     (obj2 match {
@@ -108,7 +108,7 @@ class ContractTests extends FunSuite with Matchers {
 
     val obj3 = Json("maybe" := List(jNumber(1), jNumber(2)))
     (obj3 match {
-      case Arr.maybe(seq) => seq
+      case Arr.maybe(Some(seq)) => seq
     }) should equal (Seq(1, 2))
   }
 
@@ -128,7 +128,7 @@ class ContractTests extends FunSuite with Matchers {
 
     val dynamic2 = Dyn.nest.$dynamic[Boolean]("bool")
 
-    (Json("nested" -> Json("bool" := true)) match {
+    (Json("nest" -> Json("bool" := true)) match {
       case dynamic2(b) => b
     }) should be (Some(true))
   }
