@@ -1,4 +1,4 @@
-package org.higherState.jsentric
+package jsentric
 
 object Jsentric extends
   Patterns with

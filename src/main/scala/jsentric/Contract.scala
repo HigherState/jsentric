@@ -1,4 +1,4 @@
-package org.higherState.jsentric
+package jsentric
 
 import argonaut._
 import Argonaut._
@@ -122,11 +122,11 @@ object \! {
     new Default[T](path, parentPath ++ path, default, validator)(pattern)
 }
 
-abstract class \\(path:Path, validator:Validator[JsonObject] = EmptyValidator)(implicit parentPath:Path, pattern:Pattern[JsonObject])
-  extends Expected[JsonObject](path, parentPath ++ path, validator)(pattern) with BaseContract
+abstract class \\(path:Path, validator:Validator[JsonObject] = EmptyValidator)(implicit parentPath:Path)
+  extends Expected[JsonObject](path, parentPath ++ path, validator)(Patterns.jsonObjectPattern) with BaseContract
 
-abstract class \\?(path:Path, validator:Validator[Option[JsonObject]] = EmptyValidator)(implicit parentPath:Path, pattern:Pattern[JsonObject])
-  extends Maybe[JsonObject](path, parentPath ++ path, validator)(pattern) with BaseContract
+abstract class \\?(path:Path, validator:Validator[Option[JsonObject]] = EmptyValidator)(implicit parentPath:Path)
+  extends Maybe[JsonObject](path, parentPath ++ path, validator)(Patterns.jsonObjectPattern) with BaseContract
 
 case class \:[T](path:Path, override val validator:Validator[Seq[T]] = EmptyValidator)(implicit parentPath:Path, pattern:Pattern[Seq[T]], val seqPattern:Pattern[Seq[Json]], val elementPattern:Pattern[T])
   extends Expected[Seq[T]](path, parentPath ++ path, validator)(pattern)

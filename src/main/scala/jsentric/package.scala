@@ -1,5 +1,3 @@
-package org.higherState
-
 import scalaz.{NonEmptyList, \/}
 import argonaut._
 import Argonaut._

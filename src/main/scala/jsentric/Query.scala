@@ -1,4 +1,4 @@
-package org.higherState.jsentric
+package jsentric
 
 import scalaz._
 import Scalaz._

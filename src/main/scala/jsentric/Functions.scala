@@ -1,4 +1,4 @@
-package org.higherState.jsentric
+package jsentric
 
 import argonaut._
 import Argonaut._

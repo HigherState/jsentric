@@ -1,4 +1,4 @@
-package org.higherState.jsentric
+package jsentric
 
 import argonaut._
 import Argonaut._
@@ -52,12 +52,18 @@ class ContractTests extends FunSuite with Matchers {
     object Test1 extends Contract {
       val nested  = new \\("nested") {
         val one = \[Int]("one")
+        val level2 = new \\("level2") {
+          val two = \[Int]("two")
+        }
       }
     }
 
     (Json("nested" -> Json("one" := 1)) match {
       case Test1.nested.one(v) => v
     }) should equal (1)
+    (Json("nested" -> Json("level2" -> Json("two" := 34))) match {
+      case Test1.nested.level2.two(v) => v
+    }) should equal (34)
   }
 
   test("Default value contract") {
@@ -133,15 +139,15 @@ class ContractTests extends FunSuite with Matchers {
     }) should be (Some(true))
   }
 
-//  test("Recursive contract") {
-//    trait Recursive extends SubContract {
-//      val level = \[Int]("level")
-//      val child = new \\?("child") with Recursive
-//    }
-//    object Recursive extends Contract with Recursive
-//
-//    (Json("level" := 0, "child" -> Json("level" := 1, "child" -> Json("level" := 2))) match {
-//      case Recursive.child.level(l1)  && Recursive.child.child.level(l2) => l1 -> l2
-//    }) should equal (1 -> 2)
-//  }
+  test("Recursive contract") {
+    trait Recursive extends SubContract {
+      val level = \[Int]("level")
+      lazy val child = new \\?("child") with Recursive
+    }
+    object Recursive extends Contract with Recursive
+
+    (Json("level" := 0, "child" -> Json("level" := 1, "child" -> Json("level" := 2))) match {
+      case Recursive.child.level(l1)  && Recursive.child.child.level(l2) => l1 -> l2
+    }) should equal (1 -> 2)
+  }
 }
