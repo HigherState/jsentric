@@ -62,7 +62,6 @@ trait SimpleValidator[+T] extends Validator[T] {
 }
 
 trait JsonValidators {
-  import Patterns._
   import Path._
 
   val immutable = new SimpleValidator[Nothing] {
@@ -168,20 +167,20 @@ trait JsonValidators {
     def schema = Json("lessThanEquals" := value)
   }
 
-  def in[T](values:T*)(implicit pattern:Pattern[T]) = new SimpleValidator[JOptionable[T]] {
-    def schema = Json("is in" := values.map(pattern.apply).toList)
+  def in[T](values:T*)(implicit codec: CodecJson[T]) = new SimpleValidator[JOptionable[T]] {
+    def schema = Json("is in" := values.map(codec.apply).toList)
 
     def maybeValid(path: Path): PartialFunction[(Option[Json], Option[Json]), (String, Path)] = {
-      case (Some(pattern(j)), _) if !values.contains(j) =>
+      case (Some(j), _) if !codec.decodeJson(j).toOption.exists(values.contains) =>
         "Value outside of allowed values." -> path
     }
   }
 
-  def nin[T](values:T*)(implicit pattern:Pattern[T]) = new SimpleValidator[JOptionable[T]] {
-    def schema = Json("notIn" := values.map(pattern.apply).toList)
+  def nin[T](values:T*)(implicit codec: CodecJson[T]) = new SimpleValidator[JOptionable[T]] {
+    def schema = Json("notIn" := values.map(codec.apply).toList)
 
     def maybeValid(path: Path): PartialFunction[(Option[Json], Option[Json]), (String, Path)] = {
-      case (Some(pattern(j)), _) if !values.contains(j) =>
+      case (Some(j), _) if codec.decodeJson(j).toOption.exists(values.contains) =>
         "Value not allowed." -> path
     }
   }

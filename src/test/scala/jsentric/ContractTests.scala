@@ -3,15 +3,13 @@ package jsentric
 import argonaut._
 import Argonaut._
 import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.concurrent.ScalaFutures
-
 import scalaz.{\/-, \/}
 
 /**
  * Created by Jamie Pullar on 07/06/2015.
  */
 class ContractTests extends FunSuite with Matchers {
-  import Patterns._
+  import Jsentric._
 
   test("Contract pattern matching") {
     object Test extends Contract {
@@ -86,7 +84,7 @@ class ContractTests extends FunSuite with Matchers {
       val disrupt = \[\/[String, (Float, Boolean)]] ("disrupt")
       val option = \[Option[Seq[Int]]]("option")
     }
-    val obj = Json("tuple" := List(jNumberOrString(45), jString("test")), "disrupt" := List(jNumberOrString(4.56), jFalse), "option" := List(1,2,3,4))
+    val obj = Json("tuple" -> jArrayElements(jNumberOrString(45), jString("test")), "disrupt" -> jArrayElements(jNumberOrString(4.56), jFalse), "option" := List(1,2,3,4))
     (obj match {
       case Adv.tuple((l,r)) && Adv.disrupt(\/-((f, b))) =>
         (l,r, f, b)
@@ -101,12 +99,12 @@ class ContractTests extends FunSuite with Matchers {
       val maybe = \:?[Int]("maybe")
     }
 
-    val obj1 = Json("exp" := List(jString("one"), jString("two")))
+    val obj1 = Json("exp" -> jArrayElements(jString("one"), jString("two")))
     (obj1 match {
       case Arr.exp(seq) => seq
     }) should equal (Seq("one", "two"))
 
-    val obj2 = Json("exp" := List(jString("one"), jTrue))
+    val obj2 = Json("exp" -> jArrayElements(jString("one"), jTrue))
     (obj2 match {
       case Arr.exp(seq) => seq
       case _ => "wrong type"

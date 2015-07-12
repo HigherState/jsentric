@@ -1,7 +1,7 @@
 package jsentric
 
 object Jsentric extends
-  Patterns with
+  Codecs with
   Validation with
   Lens with
   Query

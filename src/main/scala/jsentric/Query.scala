@@ -20,7 +20,7 @@ trait Query extends Functions with Lens {
   implicit def numericQuery[T >: JNumeric](prop:Property[T]) =
     new NumericQuery(prop)
 
-  implicit class ArrayQuery[T](val prop: Expected[Seq[T]])(implicit p:Pattern[T]) {
+  implicit class ArrayQuery[T](val prop: Expected[Seq[T]])(implicit codec: CodecJson[T]) {
 
     def $elemMatch(f:Property[T] => Json):Json =
       nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
@@ -29,17 +29,7 @@ trait Query extends Functions with Lens {
       Query.pathToObject(prop.absolutePath.segments, obj)
   }
 
-  implicit class MaybeArrayQuery[T](val prop: Maybe[Seq[T]])(implicit p:Pattern[T]) {
-
-    def $elemMatch(f:Property[T] => Json):Json =
-      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
-
-
-    private def nest(obj:Json) =
-      Query.pathToObject(prop.absolutePath.segments, obj)
-  }
-
-  implicit class SetQuery[T](val prop: Expected[Set[T]])(implicit p:Pattern[T]) {
+  implicit class MaybeArrayQuery[T](val prop: Maybe[Seq[T]])(implicit codec: CodecJson[T]) {
 
     def $elemMatch(f:Property[T] => Json):Json =
       nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
@@ -49,7 +39,17 @@ trait Query extends Functions with Lens {
       Query.pathToObject(prop.absolutePath.segments, obj)
   }
 
-  implicit class MaybeSetQuery[T](val prop: Maybe[Set[T]])(implicit p:Pattern[T]) {
+  implicit class SetQuery[T](val prop: Expected[Set[T]])(implicit codec: CodecJson[T]) {
+
+    def $elemMatch(f:Property[T] => Json):Json =
+      nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
+
+
+    private def nest(obj:Json) =
+      Query.pathToObject(prop.absolutePath.segments, obj)
+  }
+
+  implicit class MaybeSetQuery[T](val prop: Maybe[Set[T]])(implicit codec: CodecJson[T]) {
 
     def $elemMatch(f:Property[T] => Json):Json =
       nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
@@ -137,11 +137,11 @@ class JsonQueryExt(val json:Json) extends AnyVal with Functions {
 //Handle default?
 class ValueQuery[T](val prop: Property[T]) extends AnyVal {
 
-  def $eq(value:T) = nest(prop.pattern.apply(value))
+  def $eq(value:T) = nest(prop.codec(value))
   //Currently not supporting chaining of $ne in an && for the same field
-  def $ne(value:T) = nest(Json("$ne" -> prop.pattern.apply(value)))
-  def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop.pattern.apply))))
-  def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop.pattern.apply))))
+  def $ne(value:T) = nest(Json("$ne" -> prop.codec(value)))
+  def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop.codec.apply))))
+  def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop.codec.apply))))
 
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)

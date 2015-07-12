@@ -56,14 +56,14 @@ sealed trait PropertyLens[T] extends Any with Functions {
   def prop:Property[T]
 
   def $get(j:Json):Option[T] =
-    getValue(j, prop.absolutePath.segments).flatMap(prop.pattern.unapply)
+    getValue(j, prop.absolutePath.segments).flatMap(j => prop.codec.decodeJson(j).toOption)
 
   def $set =
-    (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.pattern(value))
+    (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(value))
   def $maybeSet =
     (value:Option[T]) => (j:Json) =>
       value.fold(j) { v =>
-        setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+        setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
       }
 }
 
@@ -71,7 +71,7 @@ class ExpectedLens[T](val prop: Expected[T]) extends AnyVal with PropertyLens[T]
   //applies set if value is nonEmpty, does not drop on empty
   def $modify =
     (func:T => T) => (j:Json) =>
-      $get(j).fold[Json](j)(v => setValue(Some(j), prop.absolutePath.segments, prop.pattern(func(v))))
+      $get(j).fold[Json](j)(v => setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(func(v))))
   def $copy =
     (p:Property[T]) => (j:Json) => {
       getValue(j, prop.absolutePath.segments) match {
@@ -87,7 +87,7 @@ class MaybeLens[T](val prop: Maybe[T]) extends AnyVal with PropertyLens[T] {
     (j:Json) => dropValue(j, prop.absolutePath.segments)
   def $setOrDrop =
     (value:Option[T]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
-      setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+      setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
     }
   def $modify =
     (func:Option[T] => Option[T]) => (j:Json) =>
@@ -105,28 +105,28 @@ class MaybeLens[T](val prop: Maybe[T]) extends AnyVal with PropertyLens[T] {
 
 class DefaultLens[T](val prop: Default[T]) extends AnyVal with Functions {
   def $get(j:Json):T =
-    getValue(j, prop.absolutePath.segments).flatMap(prop.pattern.unapply).getOrElse(prop.default)
+    getValue(j, prop.absolutePath.segments).flatMap(js => prop.codec.decodeJson(js).toOption).getOrElse(prop.default)
   def $set =
-    (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.pattern(value))
+    (value:T) => (j:Json) => setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(value))
   def $maybeSet =
     (value:Option[T]) => (j:Json) =>
       value.map { v =>
-        setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+        setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
       }
   def $reset =
     (j:Json) => dropValue(j, prop.absolutePath.segments)
   def $resetOrDrop =
     (value:Option[T]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
-      setValue(Some(j), prop.absolutePath.segments, prop.pattern(v))
+      setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
     }
   def $modify =
     (func:T => T) => (j:Json) =>
-      setValue(Some(j), prop.absolutePath.segments, prop.pattern(func($get(j))))
+      setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(func($get(j))))
   def $copy =
     (p:Property[T]) => (j:Json) => {
       getValue(j, prop.absolutePath.segments) match {
         case None =>
-          insertValue(Some(j), p.absolutePath.segments, prop.pattern(prop.default))
+          insertValue(Some(j), p.absolutePath.segments, prop.codec.encode(prop.default))
         case Some(value) =>
           insertValue(Some(j), p.absolutePath.segments, value)
       }
@@ -165,34 +165,36 @@ class JsonLens[T](val json:Json) extends AnyVal with Functions {
 
 class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {
   def $at(index:Int) =
-    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementPattern)
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec)
 
   def $head = $at(0)
 
   def $append =
     (value:T) => (j:Json) =>
-      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(current(j) :+ prop.elementPattern(value)))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqCodec(current(j) :+ prop.elementCodec.encode(value)))
 
   def $prepend =
     (value:T) => (j:Json) =>
-      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(prop.elementPattern(value) +: current(j)))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqCodec(prop.elementCodec(value) +: current(j)))
 
-  protected def current(j:Json) = getValue(j, prop.absolutePath.segments).flatMap(prop.seqPattern.unapply).getOrElse(Seq.empty)
+  protected def current(j:Json) =
+    getValue(j, prop.absolutePath.segments).flatMap(js => prop.seqCodec.decodeJson(js).toOption).getOrElse(Seq.empty)
 }
 
 class MaybeArrayLens[T](val prop: \:?[T]) extends AnyVal with Functions {
   def $at(index:Int) =
-    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementPattern)
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec)
 
   def $head = $at(0)
 
   def $append =
     (value:T) => (j:Json) =>
-      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(current(j) :+ prop.elementPattern(value)))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqCodec(current(j) :+ prop.elementCodec.encode(value)))
 
   def $prepend =
     (value:T) => (j:Json) =>
-      setValue(Some(j), prop.absolutePath.segments, prop.seqPattern.apply(prop.elementPattern(value) +: current(j)))
+      setValue(Some(j), prop.absolutePath.segments, prop.seqCodec(prop.elementCodec(value) +: current(j)))
 
-  protected def current(j:Json) = getValue(j, prop.absolutePath.segments).flatMap(prop.seqPattern.unapply).getOrElse(Seq.empty)
+  protected def current(j:Json) =
+    getValue(j, prop.absolutePath.segments).flatMap(js => prop.seqCodec.decodeJson(js).toOption).getOrElse(Seq.empty)
 }

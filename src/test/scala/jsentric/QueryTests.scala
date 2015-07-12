@@ -27,6 +27,8 @@ class QueryTests extends FunSuite with Matchers {
 
     query2.isMatch(Json("nested" -> Json("field2" := "value"))) should be (true)
     query2.isMatch(Json("field" := "value", "nested" -> Json("field2" := "value"))) should be (false)
+
+    query2.toString
   }
 
   test("Equality")   {

@@ -4,7 +4,6 @@ import Argonaut._
 
 package object jsentric {
 
-  type JsonMap = Map[JsonField, Json]
   type Segments = Vector[Either[String, Int]]
   type JValid = \/[NonEmptyList[(String, Path)], Json]
 
