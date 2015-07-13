@@ -4,7 +4,7 @@ import argonaut._
 import Argonaut._
 import shapeless._
 import shapeless.ops.hlist._
-import Codecs._
+import LooseCodecs._
 
 trait SelfApply {
   def apply[R](f:this.type => R):R = f(this)

@@ -1,7 +1,6 @@
 package jsentric
 
 import argonaut._
-import Argonaut._
 import org.scalatest.{Matchers, FunSuite}
 import scalaz.{\/-, \/}
 
