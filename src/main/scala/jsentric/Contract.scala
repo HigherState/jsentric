@@ -25,10 +25,10 @@ trait Contract extends BaseContract {
 
 }
 
-abstract class ContractType(val key:String, val matcher:Matcher = DefaultMatcher) extends BaseContract {
+abstract class ContractType(val $key:String, val matcher:Matcher = DefaultMatcher) extends BaseContract {
   implicit protected def absolutePath: Path = Path.empty
   def unapply(j:Json):Option[JsonObject] =
-    j.obj.filter(_(key).exists(matcher.isMatch))
+    j.obj.filter(_($key).exists(matcher.isMatch))
 
 }
 

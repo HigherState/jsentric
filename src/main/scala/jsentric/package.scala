@@ -11,9 +11,6 @@ package object jsentric {
   type JLength = String with Seq[Nothing]
   type JOptionable[T] = T with Option[T]
 
-  object && {
-    def unapply[A](a: A) = Some((a, a))
-  }
-
   implicit def stringToPath(s:String) = Path(s)
 }
+

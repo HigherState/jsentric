@@ -144,7 +144,15 @@ class ContractTests extends FunSuite with Matchers {
     object Recursive extends Contract with Recursive
 
     (Json("level" := 0, "child" -> Json("level" := 1, "child" -> Json("level" := 2))) match {
-      case Recursive.child.level(l1)  && Recursive.child.child.level(l2) => l1 -> l2
+      case Recursive.child.level(l1) && Recursive.child.child.level(l2) => l1 -> l2
     }) should equal (1 -> 2)
+  }
+
+  test("implicit codec test") {
+    implicit val D = Codec[Double]
+
+    (jNumberOrString(3) match {
+      case D(double) => double
+    }) should equal (3.0)
   }
 }

@@ -47,9 +47,9 @@ class ContractExt[T <: BaseContract](val c:T) extends AnyVal {
 
 class ContractTypeExt[T <: ContractType](val c:T) extends AnyVal {
   def $create(f:c.type => Json => Json):Json =
-    f(c)(Json(c.key -> c.matcher.default))
+    f(c)(Json(c.$key -> c.matcher.default))
   def $create() =
-    Json(c.key -> c.matcher.default)
+    Json(c.$key -> c.matcher.default)
 }
 
 sealed trait PropertyLens[T] extends Any with Functions {
