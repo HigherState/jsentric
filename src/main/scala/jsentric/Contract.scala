@@ -122,11 +122,11 @@ object \! {
     new Default[T](path, parentPath ++ path, default, validator)(codec)
 }
 
-abstract class \\(path:Path, validator:Validator[JsonObject] = EmptyValidator)(implicit parentPath:Path)
-  extends Expected[JsonObject](path, parentPath ++ path, validator) with BaseContract
+abstract class \\(path:Path, validator:Validator[Json] = EmptyValidator)(implicit parentPath:Path)
+  extends Expected[Json](path, parentPath ++ path, validator) with BaseContract
 
-abstract class \\?(path:Path, validator:Validator[Option[JsonObject]] = EmptyValidator)(implicit parentPath:Path)
-  extends Maybe[JsonObject](path, parentPath ++ path, validator) with BaseContract
+abstract class \\?(path:Path, validator:Validator[Option[Json]] = EmptyValidator)(implicit parentPath:Path)
+  extends Maybe[Json](path, parentPath ++ path, validator) with BaseContract
 
 case class \:[T](path:Path, override val validator:Validator[Seq[T]] = EmptyValidator)(implicit parentPath:Path, codec: CodecJson[Seq[T]], val seqCodec: CodecJson[Seq[Json]], val elementCodec: CodecJson[T])
   extends Expected[Seq[T]](path, parentPath ++ path, validator)(codec)
