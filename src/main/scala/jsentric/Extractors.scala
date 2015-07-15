@@ -23,3 +23,7 @@ object JBool {
   def unapply(json:Json):Option[Boolean] =
     json.bool
 }
+object JMap {
+  def unapply(json:Json):Option[Map[JsonField, Json]] =
+    json.obj.map(_.toMap)
+}
