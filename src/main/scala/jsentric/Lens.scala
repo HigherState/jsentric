@@ -109,6 +109,9 @@ class MaybeLens[T](val prop: Maybe[T]) extends AnyVal with PropertyLens[T] {
           insertValue(Some(j), p.absolutePath.segments, value)
       }
     }
+
+  def $nullify =
+    (j:Json) => setValue(Some(j), prop.absolutePath.segments, jNull)
 }
 
 class DefaultLens[T](val prop: Default[T]) extends AnyVal with Functions {
@@ -139,6 +142,8 @@ class DefaultLens[T](val prop: Default[T]) extends AnyVal with Functions {
           insertValue(Some(j), p.absolutePath.segments, value)
       }
     }
+  def $nullify =
+    (j:Json) => setValue(Some(j), prop.absolutePath.segments, jNull)
 }
 
 class JsonLens[T](val json:Json) extends AnyVal with Functions {
