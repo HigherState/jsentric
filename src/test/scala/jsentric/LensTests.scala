@@ -81,8 +81,8 @@ class LensTests extends FunSuite with Matchers {
     ExpTest.value.$modify(_ + "-")(withSome) should be (Json("value" := "set-", "value2" := "add"))
     ExpTest.value.$modify(_ + "-")(withNone) should be (Json("value" := "default-", "value2" := "add"))
 
-    ExpTest.value.$resetOrDrop(None)(withSome) should be (withNone)
-    ExpTest.value.$resetOrDrop(Some("set"))(withNone) should be (withSome)
+    ExpTest.value.$setOrReset(None)(withSome) should be (withNone)
+    ExpTest.value.$setOrReset(Some("set"))(withNone) should be (withSome)
     ExpTest.value.$copy(ExpTest.value2)(withSome) should be (Json("value" := "set", "value2" := "set"))
     ExpTest.value.$copy(ExpTest.value2)(withNone) should be (Json("value2" := "default"))
   }

@@ -69,4 +69,19 @@ class ValidatorTests extends FunSuite with Matchers {
     NestValid.$validate(Json("value1" := "V", "nest2" := jEmptyObject)) should
       be (-\/(NonEmptyList("Value required." ->"nest1", "Value required." -> "nest2"\"nest3", "Value required." -> "nest2"\"value5")))
   }
+
+  test("Internal and reserved validators") {
+    import DefaultValidators._
+
+    object IRValid extends Contract {
+      val reserve = \?[String]("reserve", reserved)
+      val defaultReserve = \![Int]("defaultReserve", 0, reserved)
+
+      val intern = \?[Boolean]("intern", internal)
+      val internReserve = \![Boolean]("internReserve", false, internal)
+    }
+
+    IRValid.$validate(jEmptyObject) should be (\/-(jEmptyObject))
+    IRValid.$validate(Json("reserve" := "check")) should be  (-\/(NonEmptyList("Value is reserved and cannot be provided." ->"reserve")))
+  }
 }

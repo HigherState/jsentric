@@ -2,6 +2,7 @@ package jsentric
 
 import argonaut._
 import Argonaut._
+import scalaz.Scalaz._
 import shapeless._
 import shapeless.ops.hlist._
 import LooseCodecs._
@@ -20,15 +21,14 @@ trait BaseContract extends SelfApply {
 trait Contract extends BaseContract {
   implicit protected def absolutePath:Path = Path.empty
 
-  def unapply(j:Json):Option[JsonObject] =
-    j.obj
-
+  def unapply(j:Json):Option[Json] =
+    Some(j)
 }
 
 abstract class ContractType(val $key:String, val matcher:Matcher = DefaultMatcher) extends BaseContract {
   implicit protected def absolutePath: Path = Path.empty
-  def unapply(j:Json):Option[JsonObject] =
-    j.obj.filter(_($key).exists(matcher.isMatch))
+  def unapply(j:Json):Option[Json] =
+    j.obj.exists(_($key).exists(matcher.isMatch)).option(j)
 
 }
 
@@ -74,16 +74,18 @@ trait Property[T <: Any] extends SelfApply {
   def relativePath:Path
   def validator:Validator[_]
 }
-
-class Expected[T](val relativePath:Path, implicit val absolutePath:Path, val validator:Validator[T])(implicit val codec: CodecJson[T])
+//implicit codecs private so properties dont get implicit clashes
+class Expected[T](val relativePath:Path, implicit val absolutePath:Path, val validator:Validator[T])(implicit private val _codec: CodecJson[T])
   extends Property[T] with Functions with Unapplicable[T] {
+  def codec = _codec
 
   def unapply(j:Json):Option[T] =
     getValue(j, absolutePath.segments).flatMap(v => codec.decodeJson(v).toOption)
 }
 
-class Maybe[T](val relativePath:Path, implicit val absolutePath:Path, val validator:Validator[Option[T]])(implicit val codec: CodecJson[T])
+class Maybe[T](val relativePath:Path, implicit val absolutePath:Path, val validator:Validator[Option[T]])(implicit private val _codec: CodecJson[T])
   extends Property[T] with Functions with Unapplicable[Option[T]] {
+  def codec = _codec
 
   def unapply(j:Json):Option[Option[T]] =
     getValue(j, absolutePath.segments).fold[Option[Option[T]]](Some(None)) { v =>
@@ -92,8 +94,9 @@ class Maybe[T](val relativePath:Path, implicit val absolutePath:Path, val valida
 
 }
 
-class Default[T](val relativePath:Path, implicit val absolutePath:Path, val default:T, val validator:Validator[T])(implicit val codec: CodecJson[T])
+class Default[T](val relativePath:Path, implicit val absolutePath:Path, val default:T, val validator:Validator[Option[T]])(implicit private val _codec: CodecJson[T])
   extends Property[T] with Functions with Unapplicable[T] {
+  def codec = _codec
 
   def unapply(j:Json):Option[T] =
     getValue(j, absolutePath.segments).fold[Option[T]](Some(default)) { v =>
@@ -118,7 +121,7 @@ object \? {
 }
 
 object \! {
-  def apply[T](path:Path, default:T, validator:Validator[T] = EmptyValidator)(implicit parentPath:Path, codec: CodecJson[T]) =
+  def apply[T](path:Path, default:T, validator:Validator[Option[T]] = EmptyValidator)(implicit parentPath:Path, codec: CodecJson[T]) =
     new Default[T](path, parentPath ++ path, default, validator)(codec)
 }
 
@@ -128,11 +131,17 @@ abstract class \\(path:Path, validator:Validator[Json] = EmptyValidator)(implici
 abstract class \\?(path:Path, validator:Validator[Option[Json]] = EmptyValidator)(implicit parentPath:Path)
   extends Maybe[Json](path, parentPath ++ path, validator) with BaseContract
 
-case class \:[T](path:Path, override val validator:Validator[Seq[T]] = EmptyValidator)(implicit parentPath:Path, codec: CodecJson[Seq[T]], val seqCodec: CodecJson[Seq[Json]], val elementCodec: CodecJson[T])
-  extends Expected[Seq[T]](path, parentPath ++ path, validator)(codec)
+case class \:[T](path:Path, override val validator:Validator[Seq[T]] = EmptyValidator)(implicit parentPath:Path,  private val _codec: CodecJson[Seq[T]],  private val _seqCodec: CodecJson[Seq[Json]],  private val _elementCodec: CodecJson[T])
+  extends Expected[Seq[T]](path, parentPath ++ path, validator)(_codec) {
+  def elementCodec = _elementCodec
+  def seqCodec = _seqCodec
+}
 
-case class \:?[T](path:Path, override val validator:Validator[Option[Seq[T]]] = EmptyValidator)(implicit parentPath:Path, codec: CodecJson[Seq[T]], val seqCodec: CodecJson[Seq[Json]], val elementCodec: CodecJson[T])
-  extends Maybe[Seq[T]](path, parentPath ++ path, validator)(codec)
+case class \:?[T](path:Path, override val validator:Validator[Option[Seq[T]]] = EmptyValidator)(implicit parentPath:Path, private val _codec: CodecJson[Seq[T]],  private val _seqCodec: CodecJson[Seq[Json]],  private val _elementCodec: CodecJson[T])
+  extends Maybe[Seq[T]](path, parentPath ++ path, validator)(_codec) {
+  def elementCodec = _elementCodec
+  def seqCodec = _seqCodec
+}
 
 
 trait Evaluator[L <: HList] {

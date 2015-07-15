@@ -5,31 +5,34 @@ import Argonaut._
 
 trait Lens extends Functions {
 
-  implicit def lensCombinator(f: Json => Json) =
+  implicit def lensCombinator(f: Json => Json):LensCombinator =
     new LensCombinator(f)
 
-  implicit def contractExt[T <: BaseContract](c:T) =
+  implicit def valueContractExt[T](c:ValueContract[T]):ValueContractExt[T] =
+    new ValueContractExt[T](c)
+
+  implicit def contractExt[T <: BaseContract](c:T):ContractExt[T] =
     new ContractExt(c)
 
-  implicit def contractTypeExt[T <: ContractType](c:T) =
+  implicit def contractTypeExt[T <: ContractType](c:T):ContractTypeExt[T] =
     new ContractTypeExt(c)
 
-  implicit def expectedLens[T](prop: Expected[T]) =
+  implicit def expectedLens[T](prop: Expected[T]):ExpectedLens[T] =
     new ExpectedLens(prop)
 
-  implicit def maybeLens[T](prop: Maybe[T]) =
+  implicit def maybeLens[T](prop: Maybe[T]):MaybeLens[T] =
     new MaybeLens(prop)
 
-  implicit def defaultLens[T](prop: Default[T]) =
+  implicit def defaultLens[T](prop: Default[T]):DefaultLens[T] =
     new DefaultLens(prop)
 
-  implicit def jsonLens[T](json:Json) =
+  implicit def jsonLens[T](json:Json):JsonLens[T] =
     new JsonLens(json)
 
-  implicit def arrayLens[T](prop: \:[T]) =
+  implicit def arrayLens[T](prop: \:[T]):ArrayLens[T] =
     new ArrayLens(prop)
 
-  implicit def maybeArrayLens[T](prop: \:?[T]) =
+  implicit def maybeArrayLens[T](prop: \:?[T]):MaybeArrayLens[T] =
     new MaybeArrayLens(prop)
 }
 
@@ -40,9 +43,14 @@ class LensCombinator(val f: Json => Json) extends AnyVal {
     (j: Json) => f2(f(j))
 }
 
+class ValueContractExt[T](val c:ValueContract[T]) extends AnyVal {
+  def $create(value:T):Json =
+    c.codec(value)
+}
+
 class ContractExt[T <: BaseContract](val c:T) extends AnyVal {
   def $create(f:c.type => Json => Json):Json =
-    f(c)(jEmptyArray)
+    f(c)(jEmptyObject)
 }
 
 class ContractTypeExt[T <: ContractType](val c:T) extends AnyVal {
@@ -115,7 +123,7 @@ class DefaultLens[T](val prop: Default[T]) extends AnyVal with Functions {
       }
   def $reset =
     (j:Json) => dropValue(j, prop.absolutePath.segments)
-  def $resetOrDrop =
+  def $setOrReset =
     (value:Option[T]) => (j:Json) => value.fold(dropValue(j, prop.absolutePath.segments)){v =>
       setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
     }

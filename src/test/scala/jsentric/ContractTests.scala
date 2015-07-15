@@ -155,4 +155,14 @@ class ContractTests extends FunSuite with Matchers {
       case D(double) => double
     }) should equal (3.0)
   }
+
+  test("nested codec") {
+    object T extends Contract {
+      val t1 = new \\?("t1") {
+        val t2 = \:?[Json]("t2")
+
+      }
+    }
+
+  }
 }

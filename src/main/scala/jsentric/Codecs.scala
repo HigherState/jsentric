@@ -88,16 +88,16 @@ trait Codecs extends EncodeJsons with DecodeJsons {
 
 trait LooseCodecs extends Codecs {
 
-  implicit lazy val jSeqPattern:CodecJson[Seq[Json]] =
-    seqPattern(jsonCodec)
+  implicit lazy val jSeqCodec:CodecJson[Seq[Json]] =
+    seqCodec(jsonCodec)
 
-  implicit lazy val jSetPattern:CodecJson[Set[Json]] =
-    setPattern(jsonCodec)
+  implicit lazy val jSetCodec:CodecJson[Set[Json]] =
+    setCodec(jsonCodec)
 
-  implicit lazy val jVectorPattern:CodecJson[Vector[Json]] =
-    vectorPattern(jsonCodec)
+  implicit lazy val jVectorCodec:CodecJson[Vector[Json]] =
+    vectorCodec(jsonCodec)
 
-  implicit def seqPattern[T](implicit codec:CodecJson[T]) =
+  implicit def seqCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Seq[T]](
       new EncodeJson[Seq[T]]{
         def encode(a: Seq[T]): Json =
@@ -106,7 +106,7 @@ trait LooseCodecs extends Codecs {
       optionDecoder[Seq[T]](_.array.map(_.flatMap(t => codec.decodeJson(t).toOption)), "array")
     )
 
-  implicit def setPattern[T](implicit codec:CodecJson[T]) =
+  implicit def setCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Set[T]](
       new EncodeJson[Set[T]]{
         def encode(a: Set[T]): Json =
@@ -115,13 +115,22 @@ trait LooseCodecs extends Codecs {
       optionDecoder[Set[T]](_.array.map(_.flatMap(t => codec.decodeJson(t).toOption).toSet), "array")
     )
 
-  implicit def vectorPattern[T](implicit codec:CodecJson[T]) =
+  implicit def vectorCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Vector[T]](
       new EncodeJson[Vector[T]]{
         def encode(a: Vector[T]): Json =
           jArray(a.map(codec.encode).toList)
       },
       optionDecoder[Vector[T]](_.array.map(_.flatMap(t => codec.decodeJson(t).toOption).toVector), "array")
+    )
+
+  implicit def mapCodec[T](implicit codec:CodecJson[T]) =
+    argonaut.CodecJson.derived[Map[String, T]](
+      new EncodeJson[Map[String, T]]{
+        def encode(a: Map[String, T]): Json =
+          a.mapValues(codec.encode).asJson
+      },
+      optionDecoder[Map[String, T]](_.obj.map(_.toList.flatMap(t => codec.decodeJson(t._2).toOption.map(t._1 -> _)).toMap), "object")
     )
 }
 
@@ -150,16 +159,16 @@ trait StrictCodecs extends Codecs {
       else e.decodeJson(r.focus).map(Some(_))
     }
 
-  implicit def jSeqPattern:CodecJson[Seq[Json]] =
-    seqPattern(jsonCodec)
+  implicit def jSeqCodec:CodecJson[Seq[Json]] =
+    seqCodec(jsonCodec)
 
-  implicit def jSetPattern:CodecJson[Set[Json]] =
-    setPattern(jsonCodec)
+  implicit def jSetCodec:CodecJson[Set[Json]] =
+    setCodec(jsonCodec)
 
-  implicit def jVectorPattern:CodecJson[Vector[Json]] =
-    vectorPattern(jsonCodec)
+  implicit def jVectorCodec:CodecJson[Vector[Json]] =
+    vectorCodec(jsonCodec)
 
-  implicit def seqPattern[T](implicit codec:CodecJson[T]) =
+  implicit def seqCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Seq[T]](
       new EncodeJson[Seq[T]]{
         def encode(a: Seq[T]): Json =
@@ -168,7 +177,7 @@ trait StrictCodecs extends Codecs {
       optionDecoder[Seq[T]](_.array.flatMap(_.map(t => codec.decodeJson(t).toOption).sequence[Option, T]), "array")
     )
 
-  implicit def setPattern[T](implicit codec:CodecJson[T]) =
+  implicit def setCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Set[T]](
       new EncodeJson[Set[T]]{
         def encode(a: Set[T]): Json =
@@ -177,7 +186,7 @@ trait StrictCodecs extends Codecs {
       optionDecoder[Set[T]](_.array.flatMap(_.map(t => codec.decodeJson(t).toOption).sequence[Option, T].map(_.toSet)), "array")
     )
 
-  implicit def vectorPattern[T](implicit codec:CodecJson[T]) =
+  implicit def vectorCodec[T](implicit codec:CodecJson[T]) =
     argonaut.CodecJson.derived[Vector[T]](
       new EncodeJson[Vector[T]]{
         def encode(a: Vector[T]): Json =
@@ -185,7 +194,17 @@ trait StrictCodecs extends Codecs {
       },
       optionDecoder[Vector[T]](_.array.flatMap(_.map(t => codec.decodeJson(t).toOption).sequence[Option, T].map(_.toVector)), "array")
     )
+
+  implicit def mapCodec[T](implicit codec:CodecJson[T]) =
+    argonaut.CodecJson.derived[Map[String, T]](
+      new EncodeJson[Map[String, T]]{
+        def encode(a: Map[String, T]): Json =
+          a.mapValues(codec.encode).asJson
+      },
+      optionDecoder[Map[String, T]](_.obj.flatMap(_.toList.map(t => codec.decodeJson(t._2).toOption.map(t._1 -> _)).sequence[Option, (String, T)].map(_.toMap)), "object")
+    )
 }
+
 
 object StrictCodecs extends Codecs
 object LooseCodecs extends Codecs
