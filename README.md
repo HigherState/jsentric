@@ -38,6 +38,8 @@ jsentric works by describing a singleton contract which represents data we might
   val validated = Order.$validate(newOrder)
 
   newOrder match {
+    case Order.email.address(email) && Order.email.friendlyName(Some(name)) =>
+      println(s"$email <$name>")
     case Order.email.address(email) && Order.fullName(firstName, lastName) =>
       println(s"$email <$firstName $lastName>")
   }
@@ -52,10 +54,20 @@ jsentric works by describing a singleton contract which represents data we might
   val sendToClient = Order.$sanitize(processing)
 
   val relatedOrdersQuery = Order.lastName.$eq("Smith") && Order.status.$in("processing", "sent")
+  
+  import scalaz.\/
+  val dynamic = Order.$dynamic[\/[String, Int]]("age")
+  
+  sendToClient match {
+    case dynamic(Some(\/-(ageInt))) =>
+      println(age)
+    case _ =>
+  }
 
 ```
 
 *Auto generation of schema information is still a work in progress
+
 *mongo query is not a full feature set.
 
 [argonaut]: http://argonaut.io/
