@@ -4,13 +4,9 @@ import argonaut._
 import org.scalatest.{Matchers, FunSuite}
 import shapeless._
 
-/**
- * Created by jamie on 11/06/15.
- */
 class ExtractorCompositorTests  extends FunSuite with Matchers {
   import Jsentric._
-  import ExtractorCompositor._
-  import Evaluator._
+  import JComposite._
   import ops.hlist.Tupler._
 
   object TestObj extends Contract {
@@ -18,7 +14,7 @@ class ExtractorCompositorTests  extends FunSuite with Matchers {
     val bool = \[Boolean]("bool")
     val string = \[String]("string")
 
-    lazy val composite = join(TestObj.string @: TestObj.int @: TestObj.bool)
+    lazy val composite = TestObj.string @: TestObj.int @: TestObj.bool
   }
 
   test("Messing about") {

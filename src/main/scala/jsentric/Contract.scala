@@ -64,8 +64,8 @@ trait SubContract {
 trait Unapplicable[T] {
   def unapply(j:Json):Option[T]
 
-  def @:[S](prev:Unapplicable[S]):Unapplicable[S] :: Unapplicable[T] :: HNil =
-    prev :: this.asInstanceOf[Unapplicable[T]] :: HNil
+  def @:[S, O](prev:Unapplicable[S])(implicit ev: JComposite.Aux[Unapplicable[S] :: Unapplicable[T] :: HNil, S :: T :: HNil], tpl:Tupler.Aux[S :: T :: HNil, O]) =
+    JsonList(prev :: this.asInstanceOf[Unapplicable[T]] :: HNil, ev, tpl)
 }
 
 trait Property[T <: Any] extends SelfApply {
@@ -144,56 +144,8 @@ case class \:?[T](path:Path, override val validator:Validator[Option[Seq[T]]] = 
 }
 
 
-trait Evaluator[L <: HList] {
-  type Out <: HList
 
-  def apply(json:Json, l:L):Option[Out]
-}
 
-object Evaluator {
-
-  type Aux[T <: HList, O <: HList] = Evaluator[T]{ type Out = O }
-
-  type E[T] = Unapplicable[T]
-
-  implicit val evaluatorHNil:Aux[HNil, HNil] = new Evaluator[HNil] {
-    type Out = HNil
-
-    def apply(json:Json, l:HNil) = Some(HNil)
-  }
-
-  implicit def evalHCons[H, T <: HList](implicit evalT: Evaluator[T]): Aux[E[H] :: T, H :: evalT.Out] =
-    new Evaluator[E[H] :: T] {
-      type Out = H :: evalT.Out
-
-      def apply(json:Json, l: E[H] :: T):Option[Out] =
-        for {
-          h <- l.head.unapply(json)
-          t <- evalT(json, l.tail)
-        } yield h :: t
-    }
-
-  implicit class HListExt[T <: HList](val t:T) extends AnyVal {
-    def @:[S](prev:Unapplicable[S]):Unapplicable[S] :: T =
-      prev :: t
-  }
-}
-
-object ExtractorCompositor {
-
-  def join[L <: HList, O <: HList, T](maybes: L)(implicit ev: Evaluator.Aux[L, O], tpl:Tupler.Aux[O, T]) =
-    new JsonList(maybes, ev, tpl)
-
-  class JsonList[L <: HList, O <: HList, T](maybes: L, ev: Evaluator.Aux[L, O], tpl:Tupler.Aux[O, T]) {
-
-    def unapply(json:Json):Option[T] = {
-      ev.apply(json, maybes).map{hl =>
-        tpl.apply(hl)
-      }
-    }
-  }
-
-}
 
 
 

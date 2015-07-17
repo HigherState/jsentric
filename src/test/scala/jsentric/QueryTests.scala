@@ -5,9 +5,6 @@ import org.scalatest.{FunSuite, Matchers}
 import argonaut._
 import Argonaut._
 
-/**
- * Created by Jamie Pullar on 07/06/2015.
- */
 class QueryTests extends FunSuite with Matchers {
   import Jsentric._
 

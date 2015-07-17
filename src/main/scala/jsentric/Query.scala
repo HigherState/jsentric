@@ -8,16 +8,16 @@ import Lens._
 
 trait Query extends Functions with Lens {
 
-  implicit def jsonQueryExt(json:Json) =
+  implicit def jsonQueryExt(json:Json):JsonQueryExt =
     new JsonQueryExt(json)
 
-  implicit def valueQuery[T](prop:Property[T]) =
+  implicit def valueQuery[T](prop:Property[T]):ValueQuery[T] =
     new ValueQuery(prop)
 
-  implicit def maybeQuery[T](prop:Maybe[T]) =
+  implicit def maybeQuery[T](prop:Maybe[T]):MaybeQuery[T] =
     new MaybeQuery(prop)
 
-  implicit def numericQuery[T >: JNumeric](prop:Property[T]) =
+  implicit def numericQuery[T >: JNumeric](prop:Property[T]):NumericQuery[T] =
     new NumericQuery(prop)
 
   implicit class ArrayQuery[T](val prop: Expected[Seq[T]])(implicit codec: CodecJson[T]) {

@@ -3,9 +3,6 @@ package jsentric
 import argonaut._
 import org.scalatest.{Matchers, FunSuite}
 
-/**
- * Created by Jamie Pullar on 07/06/2015.
- */
 class LensTests extends FunSuite with Matchers {
   import Jsentric._
 

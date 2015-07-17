@@ -2,9 +2,6 @@ package jsentric
 
 import argonaut.{CodecJson, Json}
 
-/**
- * Created by Jamie Pullar on 13/07/2015.
- */
 trait AndMatcher {
   object && {
     def unapply[A](a: A) = Some((a, a))

@@ -5,9 +5,6 @@ import Argonaut._
 import org.scalatest.{Matchers, FunSuite}
 import org.scalatest.concurrent.ScalaFutures
 
-/**
- * Created by Jamie Pullar on 07/06/2015.
- */
 class FunctionsTests extends FunSuite with Matchers with Functions {
 
   test("Applying svalue delta on obj") {

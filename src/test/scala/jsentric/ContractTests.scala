@@ -4,9 +4,6 @@ import argonaut._
 import org.scalatest.{Matchers, FunSuite}
 import scalaz.{\/-, \/}
 
-/**
- * Created by Jamie Pullar on 07/06/2015.
- */
 class ContractTests extends FunSuite with Matchers {
   import Jsentric._
 

@@ -2,6 +2,7 @@ package jsentric
 
 import argonaut._
 
+
 object Jsentric extends
   StrictCodecs with
   Validation with
@@ -21,4 +22,5 @@ object Jsentric extends
   PrettyParamss with
   AndMatcher with
   CodecMatcher with
+  Validators with
   StringWraps

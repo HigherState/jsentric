@@ -61,7 +61,7 @@ trait SimpleValidator[+T] extends Validator[T] {
     maybeValid(path).lift(value -> currentState).toSeq
 }
 
-trait JsonValidators {
+trait Validators {
   import Path._
 
   val immutable = new SimpleValidator[Nothing] {
@@ -286,4 +286,4 @@ trait JsonValidators {
   }
 }
 
-object DefaultValidators extends JsonValidators
+object Validators extends Validators

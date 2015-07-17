@@ -6,9 +6,6 @@ import Argonaut._
 
 import scalaz._
 
-/**
- * Created by Jamie Pullar on 07/06/2015.
- */
 class ValidatorTests extends FunSuite with Matchers {
   import Jsentric._
 
@@ -71,7 +68,6 @@ class ValidatorTests extends FunSuite with Matchers {
   }
 
   test("Internal and reserved validators") {
-    import DefaultValidators._
 
     object IRValid extends Contract {
       val reserve = \?[String]("reserve", reserved)
