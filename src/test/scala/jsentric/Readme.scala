@@ -1,5 +1,7 @@
 package jsentric
 
+import org.joda.time.DateTime
+
 class Readme {
   import jsentric._
   import Jsentric._
@@ -61,7 +63,7 @@ class Readme {
   val sendToClient = Order.$sanitize(pending)
 
   //generate query json
-  val relatedOrdersQuery = Order.lastName.$eq("Smith") && Order.status.$in("processing", "sent")
+  val relatedOrdersQuery = Order.orderId.$gt(56) && Order.status.$in("processing", "sent")
 
   import scalaz.{\/, \/-}
   //create a dynamic property
@@ -77,4 +79,14 @@ class Readme {
   //validate against current state
   Order.$validate(statusDelta, pending)
   val processing = pending.delta(statusDelta)
+
+  //Define subcontract for reusable or recursive structures
+  trait UserTimestamp extends SubContract {
+    val account = \[String]("account")
+    val timestamp = \[Long]("timestamp")
+  }
+  object Element extends Contract {
+    val created = new \\("created", immutable) with UserTimestamp
+    val modified = new \\("modified") with UserTimestamp
+  }
 }

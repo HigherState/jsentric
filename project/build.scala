@@ -15,7 +15,7 @@ object build extends Build {
     organization := "org.higherState",
     version := "1.0.0",
     scalaVersion := scala,
-    scalacOptions ++= Seq("-feature", "-deprecation","-language:implicitConversions","-unchecked"),
+    scalacOptions ++= Seq("-feature", "-deprecation","-language:implicitConversions","-language:reflectiveCalls","-unchecked"),
     javacOptions ++= Seq("-target", "1.7", "-source", "1.7", "-Xlint:deprecation"),
     libraryDependencies ++= Seq(
       "org.scalaz" %% "scalaz-core" % "7.1.2",
