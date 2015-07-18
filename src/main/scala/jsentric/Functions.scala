@@ -47,7 +47,6 @@ trait Functions extends Any {
         Some(d)
     }
 
-  @deprecated("Use argonaut deepmerge")
   def mergeDelta(target:Json, delta:Json):Json =
     target.deepmerge(delta)
 
