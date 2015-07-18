@@ -10,9 +10,9 @@ jsentric works by describing a singleton contract which represents data we might
   import Jsentric._
 
   /*define a contract,
-    /  /?  /! expected, optional, default properies
-    /: /:?  /:!  expected, optional, default array properties
-    // //? expected, optional object properties
+    /  /?  /! expected, optional, default fields
+    /: /:?  /:!  expected, optional, default array fields
+    // //? expected, optional object fields
    */
   object Order extends Contract {
     val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
