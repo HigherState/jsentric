@@ -12,7 +12,7 @@ jsentric works by describing a singleton contract which represents data we might
   /*define a contract,
     /  /?  /! expected, optional, default properies
     /: /:?  /:!  expected, optional, default array properties
-    // //? expected, option object properties
+    // //? expected, optional object properties
    */
   object Order extends Contract {
     val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
