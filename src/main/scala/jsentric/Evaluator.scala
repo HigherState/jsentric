@@ -10,7 +10,7 @@ trait Evaluator[L <: HList] {
   def apply(json:Json, l:L):Option[Out]
 }
 
-object JComposite {
+object Composite {
 
   type Aux[T <: HList, O <: HList] = Evaluator[T]{ type Out = O }
 
@@ -39,7 +39,7 @@ object JComposite {
   }
 }
 
-case class JsonList[L <: HList, O <: HList, T](maybes: L, ev: JComposite.Aux[L, O], tpl:Tupler.Aux[O, T]) {
+case class JsonList[L <: HList, O <: HList, T](maybes: L, ev: Composite.Aux[L, O], tpl:Tupler.Aux[O, T]) {
 
   def unapply(json:Json):Option[T] = {
     ev.apply(json, maybes).map{hl =>
@@ -47,6 +47,8 @@ case class JsonList[L <: HList, O <: HList, T](maybes: L, ev: JComposite.Aux[L, 
     }
   }
 
+  //TODO: add $set method, look at FnFromProduct
+
   def @:[S, T2](prev:Unapplicable[S])(implicit tpl2:Tupler.Aux[S :: O, T2]) =
-    JsonList(prev :: maybes, JComposite.evalHCons[S, L](ev), tpl2)
+    JsonList(prev :: maybes, Composite.evalHCons[S, L](ev), tpl2)
 }

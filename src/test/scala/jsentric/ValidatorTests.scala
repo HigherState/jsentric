@@ -78,6 +78,24 @@ class ValidatorTests extends FunSuite with Matchers {
     }
 
     IRValid.$validate(jEmptyObject) should be (\/-(jEmptyObject))
-    IRValid.$validate(Json("reserve" := "check")) should be  (-\/(NonEmptyList("Value is reserved and cannot be provided." ->"reserve")))
+    IRValid.$validate(Json("reserve" := "check")) should be  (-\/(NonEmptyList("Value is reserved and cannot be provided." -> Path("reserve"))))
+  }
+
+  test("Custom validator") {
+
+    object Custom extends Contract {
+      val values = \:?[(String, Int)]("values" , forall(custom((t:(String, Int)) => t._2 > 0, "Int must be greater than zero")))
+      val compare = \?[Int]("compare", customCompare[Int]((d,c) => math.abs(d - c) < 3, "Cannot change by more than three"))
+    }
+
+    val success = Json("values" -> jArrayElements(jArrayElements("one".asJson, 1.asJson)))
+    val failure = Json("values" -> jArrayElements(jArrayElements("one".asJson, 1.asJson), jArrayElements("negative".asJson, (-1).asJson)))
+
+    Custom.$validate(success) should be (\/-(success))
+    Custom.$validate(failure) should be (-\/(NonEmptyList("Int must be greater than zero" -> "values"\1)))
+
+    val compare = Json("compare" := 5)
+    Custom.$validate(compare, Json("compare" := 7)) should be (\/-(compare))
+    Custom.$validate(compare, Json("compare" := 0)) should be (-\/(NonEmptyList("Cannot change by more than three" -> Path("compare"))))
   }
 }

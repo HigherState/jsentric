@@ -6,7 +6,7 @@ import shapeless._
 
 class ExtractorCompositorTests  extends FunSuite with Matchers {
   import Jsentric._
-  import JComposite._
+  import Composite._
   import ops.hlist.Tupler._
 
   object TestObj extends Contract {
