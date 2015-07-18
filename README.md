@@ -69,7 +69,7 @@ jsentric works by describing a singleton contract which represents data we might
   val sendToClient = Order.$sanitize(pending)
 
   //generate query json
-  val relatedOrdersQuery = Order.lastName.$eq("Smith") && Order.status.$in("processing", "sent")
+  val relatedOrdersQuery = Order.orderId.$gt(56) && Order.status.$in("processing", "sent")
 
   import scalaz.{\/, \/-}
   //create a dynamic property
