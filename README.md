@@ -85,7 +85,16 @@ jsentric works by describing a singleton contract which represents data we might
   //validate against current state
   Order.$validate(statusDelta, pending)
   val processing = pending.delta(statusDelta)
-
+  
+  //Define subcontract for reusable or recursive structures
+  trait UserTimestamp extends SubContract {
+    val account = \[String]("account")
+    val timestamp = \[Long]("timestamp")
+  }
+  object Element extends Contract {
+    val created = new \\("created", immutable) with UserTimestamp
+    val modified = new \\("modified") with UserTimestamp
+  }
 ```
 
 *Auto generation of schema information is still a work in progress
