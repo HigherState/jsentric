@@ -1,13 +1,11 @@
 package jsentric
 
-import org.joda.time.DateTime
-
 class Readme {
   import jsentric._
   import Jsentric._
 
   /*define a contract,
-    /  /?  /! expected, optional, default properies
+    /  /?  /! expected, optional, default properties
     /: /:?  /:!  expected, optional, default array properties
     // //? expected, option object properties
    */

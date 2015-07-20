@@ -9,6 +9,9 @@ import scalaz._
 class ValidatorTests extends FunSuite with Matchers {
   import Jsentric._
 
+  private def toSet(dis: \/[NonEmptyList[(String, Path)], Json]): \/[Set[(String, Path)], Json] =
+    dis.leftMap(_.list.toSet)
+
   test("Property validation") {
 
     object StrValid extends Contract {
@@ -60,11 +63,11 @@ class ValidatorTests extends FunSuite with Matchers {
     val json2 = Json("value1" := "V", "nest1" := Json("value2" := "V", "value3" := "V"), "nest2" -> Json("nest3" -> Json("value4" := "V"), "value5" := "V"))
     NestValid.$validate(json2) should be (\/-(json2))
 
-    NestValid.$validate(Json("value1" := "V", "nest1" := Json("value3" := 3))) should
-      be (-\/(NonEmptyList("Unexpected type 'JNumber'." -> "nest1"\"value3", "Value required." -> "nest1"\"value2")))
+    toSet(NestValid.$validate(Json("value1" := "V", "nest1" := Json("value3" := 3)))) should
+      be (-\/(Set("Value required." -> "nest1"\"value2", "Unexpected type 'JNumber'." -> "nest1"\"value3")))
 
-    NestValid.$validate(Json("value1" := "V", "nest2" := jEmptyObject)) should
-      be (-\/(NonEmptyList("Value required." ->"nest1", "Value required." -> "nest2"\"nest3", "Value required." -> "nest2"\"value5")))
+    toSet(NestValid.$validate(Json("value1" := "V", "nest2" := jEmptyObject))) should
+      be (-\/(Set("Value required." -> Path("nest1"), "Value required." -> "nest2"\"nest3", "Value required." -> "nest2"\"value5")))
   }
 
   test("Internal and reserved validators") {

@@ -36,14 +36,14 @@ trait Codecs extends EncodeJsons with DecodeJsons {
   implicit lazy val floatCodec =
     argonaut.CodecJson.derived[Float]
 
-  implicit def jsonObjectEncoder = new EncodeJson[JsonObject] {
+  implicit lazy val jsonObjectEncoder = new EncodeJson[JsonObject] {
     def encode(a: JsonObject): Json =
       jObject(a)
   }
-  implicit def jsonObjectDecoder =
+  implicit lazy val jsonObjectDecoder =
     optionDecoder(_.obj, "object")
 
-  implicit def jsonObjectCodec =
+  implicit lazy val jsonObjectCodec =
     argonaut.CodecJson.derived[JsonObject]
 
   implicit lazy val jsonCodec =

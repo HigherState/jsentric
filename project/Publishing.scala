@@ -18,7 +18,7 @@ import sbt._
 import Keys._
 
 object Publishing extends Sonatype(build) {
-  def projectUrl    = "https://github.com/higherState/jsentric"
+  def projectUrl    = "https://github.com/higherstate/jsentric"
   def developerId   = "JamiePullar"
   def developerName = "Jamie Pullar"
   def licenseName   = "Apache License"
