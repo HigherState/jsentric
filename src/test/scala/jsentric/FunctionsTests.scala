@@ -3,7 +3,6 @@ package jsentric
 import argonaut._
 import Argonaut._
 import org.scalatest.{Matchers, FunSuite}
-import org.scalatest.concurrent.ScalaFutures
 
 class FunctionsTests extends FunSuite with Matchers with Functions {
 
@@ -36,12 +35,12 @@ class FunctionsTests extends FunSuite with Matchers with Functions {
     val obj = Json("one" := 1, "obj" -> Json("two" := false, "three" := List(1,2,3,4), "four" -> Json("five" := 5)))
     getValue(obj, Vector.empty) should be (Some(obj))
     getValue(obj, Path("two").segments) should be (None)
-    getValue(obj, Path("one").segments) should be (jNumber(1))
+    getValue(obj, Path("one").segments) should be (Some(jNumber(1)))
     getValue(obj, Path("obj", "two").segments) should be (Some(jFalse))
     getValue(obj, Path("obj", "one").segments) should be (None)
     getValue(obj, Path("obj", "four").segments) should be (Some(Json("five" := 5)))
-    getValue(obj, Path("obj", "four", "five").segments) should be (jNumber(5))
-    getValue(obj, Path("obj", "three", 3).segments) should be (jNumber(4))
+    getValue(obj, Path("obj", "four", "five").segments) should be (Some(jNumber(5)))
+    getValue(obj, Path("obj", "three", 3).segments) should be (Some(jNumber(4)))
     getValue(obj, Path("obj", "three", 4).segments) should be (None)
   }
 

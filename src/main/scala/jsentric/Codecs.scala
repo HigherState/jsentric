@@ -139,19 +139,19 @@ trait StrictCodecs extends Codecs {
   import Scalaz._
 
   override implicit def DoubleDecodeJson: DecodeJson[Double] =
-    optionDecoder(x => x.number, "Double")
+    optionDecoder(x => x.number.map(_.toDouble), "Double")
 
   override implicit def FloatDecodeJson: DecodeJson[Float] =
-    optionDecoder(x => x.number.collect{ case f if f >= Float.MinValue && f <= Float.MaxValue => f.toFloat}, "Float")
+    optionDecoder(x => x.number.map(_.toDouble).collect{ case f if f >= Float.MinValue && f <= Float.MaxValue => f.toFloat}, "Float")
 
   override implicit def IntDecodeJson: DecodeJson[Int] =
-    optionDecoder(x => x.number.collect{ case f if f >= Int.MinValue && f <= Int.MaxValue && f % 1 == 0 => f.toInt}, "Int")
+    optionDecoder(x => x.number.map(_.toDouble).collect{ case f if f >= Int.MinValue && f <= Int.MaxValue && f % 1 == 0 => f.toInt}, "Int")
 
   override implicit def LongDecodeJson: DecodeJson[Long] =
-    optionDecoder(x => x.number.collect{ case f if f >= Long.MinValue && f <= Long.MaxValue && f % 1 == 0 => f.toLong}, "Long")
+    optionDecoder(x => x.number.map(_.toDouble).collect{ case f if f >= Long.MinValue && f <= Long.MaxValue && f % 1 == 0 => f.toLong}, "Long")
 
   override implicit def ShortDecodeJson: DecodeJson[Short] =
-    optionDecoder(x => x.number.collect{ case f if f >= Short.MinValue && f <= Short.MaxValue && f % 1 == 0 => f.toShort}, "Short")
+    optionDecoder(x => x.number.map(_.toDouble).collect{ case f if f >= Short.MinValue && f <= Short.MaxValue && f % 1 == 0 => f.toShort}, "Short")
 
   override implicit def OptionDecodeJson[A](implicit e: DecodeJson[A]): DecodeJson[Option[A]] =
     DecodeJson {r =>
