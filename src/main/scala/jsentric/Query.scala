@@ -94,7 +94,7 @@ object Query {
         apply(value.flatMap(_.field(key)), obj)
       case (key, v) =>
         value.flatMap(_.obj).fold(false){l =>
-          l(key).exists(j => j == v)
+          l(key).contains(v)
         }
     }
 
@@ -106,9 +106,12 @@ object Query {
   }
 
   def order:PartialFunction[(Json, Json), Ordering] = {
-    case (JNumber(x), JNumber(y)) => x ?|? y
+    case (JDouble(x), JDouble(y)) => x ?|? y
+    case (JLong(x), JLong(y)) => x ?|? y
     case (JString(x), JString(y)) => x ?|? y
     case (JBool(x), JBool(y)) => x ?|? y
+    case (JDouble(x), JLong(y)) => x ?|? y
+    case (JLong(x), JDouble(y)) => x.toDouble ?|? y
   }
 }
 

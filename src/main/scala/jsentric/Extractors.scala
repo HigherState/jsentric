@@ -11,9 +11,17 @@ object JObject {
   def unapply(json:Json):Option[JsonObject] =
     json.obj
 }
-object JNumber {
+object JDouble {
   def unapply(json:Json):Option[Double] =
-    json.number.map(_.toDouble)
+    json.number.collect {
+      case JsonDouble(d) => d
+    }
+}
+object JLong {
+  def unapply(json:Json):Option[Double] =
+    json.number.collect {
+      case JsonLong(l) => l
+    }
 }
 object JString {
   def unapply(json:Json):Option[String] =
