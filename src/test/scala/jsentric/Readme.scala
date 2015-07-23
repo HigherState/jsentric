@@ -62,6 +62,8 @@ class Readme {
 
   //generate query json
   val relatedOrdersQuery = Order.orderId.$gt(56) && Order.status.$in("processing", "sent")
+  //experimental convert to postgres jsonb clause
+  val postgresQuery = QueryJsonb("data", relatedOrdersQuery)
 
   import scalaz.{\/, \/-}
   //create a dynamic property
