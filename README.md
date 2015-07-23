@@ -1,6 +1,12 @@
 # jsentric
 Json contract patterns, validation, lenses and query
 
+    "io.higherstate" %% "jsentric" % "1.0-M1"
+    
+    resolvers ++= Seq(
+      "Sonatype releases" at "http://oss.sonatype.org/content/repositories/releases/",
+    )
+
 jsentric is built upon [argonaut][] and is designed to facilitate the use of the basic json datatypes in cases where we have partially dynamic data or are regularly moving through bounded context and may not wish to constantly serialize/deserialize from class objects.
 
 jsentric works by describing a singleton contract which represents data we might wish to extract from the json data structure.  By doing so, we get easy validation, lenses and even a type safe mongo db query generator.
