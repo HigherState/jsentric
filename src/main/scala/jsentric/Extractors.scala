@@ -18,7 +18,7 @@ object JDouble {
     }
 }
 object JLong {
-  def unapply(json:Json):Option[Double] =
+  def unapply(json:Json):Option[Long] =
     json.number.collect {
       case JsonLong(l) => l
     }

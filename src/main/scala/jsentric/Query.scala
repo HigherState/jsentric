@@ -58,6 +58,8 @@ trait Query extends Functions with Lens {
       Query.pathToObject(prop.absolutePath.segments, obj)
   }
 
+  def not(json:Json) =
+    Json("$not" -> json)
 
 }
 
@@ -86,6 +88,8 @@ object Query {
         !value.exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ))) //nin doesnt require existence, as per mongodb
       case ("$exists", JBool(v)) =>
         value.isDefined == v
+      case ("$not", v) =>
+        v.obj.exists(o => !apply(value, o))
       case ("$elemMatch", JObject(j)) =>
         value.collect{ case JArray(seq) => seq.exists(s => apply(Some(s), j))}.getOrElse(false)
       case ("$elemMatch", v) =>
@@ -159,16 +163,16 @@ class MaybeQuery[T](val prop:Maybe[T]) extends AnyVal {
 class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
 
   def $lt(value:Double) = nest(Json("$lt" -> jNumberOrString(value)))
-  def $lt(value:Long) = nest(Json("$lt" -> jNumberOrString(value)))
+  def $lt(value:Long) = nest(Json("$lt" -> jNumber(value)))
 
   def $gt(value:Double) = nest(Json("$gt" -> jNumberOrString(value)))
-  def $gt(value:Long) = nest(Json("$gt" -> jNumberOrString(value)))
+  def $gt(value:Long) = nest(Json("$gt" -> jNumber(value)))
 
   def $lte(value:Double) = nest(Json("$lt" -> jNumberOrString(value)))
-  def $lte(value:Long) = nest(Json("$lt" -> jNumberOrString(value)))
+  def $lte(value:Long) = nest(Json("$lt" -> jNumber(value)))
 
   def $gte(value:Double) = nest(Json("$gt" -> jNumberOrString(value)))
-  def $gte(value:Long) = nest(Json("$gt" -> jNumberOrString(value)))
+  def $gte(value:Long) = nest(Json("$gt" -> jNumber(value)))
 
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)

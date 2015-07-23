@@ -24,8 +24,6 @@ class QueryTests extends FunSuite with Matchers {
 
     query2.isMatch(Json("nested" -> Json("field2" := "value"))) should be (true)
     query2.isMatch(Json("field" := "value", "nested" -> Json("field2" := "value"))) should be (false)
-
-    query2.toString
   }
 
   test("Equality")   {
@@ -71,5 +69,26 @@ class QueryTests extends FunSuite with Matchers {
     query1.isMatch(Json("doubles" := (3.asJson -->>: 5.asJson -->>: jEmptyArray))) should be (true)
     query1.isMatch(Json("doubles" := (2.asJson -->>: 4.asJson -->>: jEmptyArray))) should be (false)
     query1.isMatch(Json("doubles" := jEmptyArray)) should be (false)
+  }
+
+  test("boolean operators") {
+    object Query4 extends Contract {
+      val value = \[Double]("value")
+    }
+
+    val query1 = Query4.value.$gt(0) || Query4.value.$lt(-10)
+    query1.isMatch(Json("value" := 2)) should be (true)
+    query1.isMatch(Json("value" := -3)) should be (false)
+    query1.isMatch(Json("value" := -15)) should be (true)
+
+    val query2 = Jsentric.not(query1)
+    query2.isMatch(Json("value" := 2)) should be (false)
+    query2.isMatch(Json("value" := -3)) should be (true)
+    query2.isMatch(Json("value" := -15)) should be (false)
+
+    val query3 = Query4.value.$gte(0) && Query4.value.$lt(50)
+    query3.isMatch(Json("value" := 12)) should be (true)
+    query3.isMatch(Json("value" := -3)) should be (false)
+    query3.isMatch(Json("value" := 50)) should be (false)
   }
 }
