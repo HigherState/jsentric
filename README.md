@@ -12,13 +12,10 @@ jsentric is built upon [argonaut][] and is designed to facilitate the use of the
 jsentric works by describing a singleton contract which represents data we might wish to extract from the json data structure.  By doing so, we get easy validation, lenses and even a type safe mongo db query generator.
 
 ```scala
-  import jsentric._
-  import Jsentric._
-
-  /*define a contract,
-    /  /?  /! expected, optional, default fields
-    /: /:?  /:!  expected, optional, default array fields
-    // //? expected, optional object fields
+    /*define a contract,
+    /  /?  /! expected, optional, default properties
+    /: /:?  /:!  expected, optional, default array properties
+    // //? expected, option object properties
    */
   object Order extends Contract {
     val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
@@ -32,10 +29,7 @@ jsentric works by describing a singleton contract which represents data we might
     val status = \?[String]("status", in("pending", "processing", "sent") && reserved)
     val notes = \?[String]("notes", internal)
 
-    val orderLines = \:[(String, Int)](
-      "orderLines", 
-      forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items"))
-    )
+    val orderLines = \:[(String, Int)]("orderLines", forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items")))
 
     import Composite._
     //Combine properties to make a composite pattern matcher
@@ -78,7 +72,7 @@ jsentric works by describing a singleton contract which represents data we might
   val relatedOrdersQuery = Order.orderId.$gt(56) && Order.status.$in("processing", "sent")
   //experimental convert to postgres jsonb clause
   val postgresQuery = QueryJsonb("data", relatedOrdersQuery)
-  
+
   import scalaz.{\/, \/-}
   //create a dynamic property
   val dynamic = Order.$dynamic[\/[String, Int]]("age")
@@ -92,8 +86,9 @@ jsentric works by describing a singleton contract which represents data we might
   val statusDelta = Order.$create(_.status.$set("processing"))
   //validate against current state
   Order.$validate(statusDelta, pending)
+  //apply delta to current state
   val processing = pending.delta(statusDelta)
-  
+
   //Define subcontract for reusable or recursive structures
   trait UserTimestamp extends SubContract {
     val account = \[String]("account")
@@ -102,6 +97,12 @@ jsentric works by describing a singleton contract which represents data we might
   object Element extends Contract {
     val created = new \\("created", immutable) with UserTimestamp
     val modified = new \\("modified") with UserTimestamp
+  }
+
+  //try to force a match even if wrong type
+  import LooseCodecs._
+  Json("orderId" := "23628") match {
+    case Order.orderId(Some(id)) => id
   }
 ```
 
