@@ -56,7 +56,7 @@ trait Validators {
   val immutable = new SimpleValidator[Nothing] {
     def maybeValid(path:Path) = {
       case (Some(a), Some(b)) if a != b =>
-        "value is immutable and cannot be changed." -> path
+        "Value is immutable and cannot be changed." -> path
     }
   }
 

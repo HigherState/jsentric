@@ -36,10 +36,64 @@ class ContractTests extends FunSuite with Matchers {
       case Test.three(i) => i
     }) should equal (4)
 
+    (Json("three" := "4") match {
+      case Test.three(i) => true
+      case _ => false
+    }) should equal (false)
+
+    (Json("two" := "String") match {
+      case Test.two(None) => true
+      case _ => false
+    }) should equal (false)
+
+    (Json("two" := jNull) match {
+      case Test.two(None) => true
+      case _ => false
+    }) should be (true)
+
+    (Json("two" := "false") match {
+      case Test.two(Some(i)) => true
+      case _ => false
+    }) should equal (false)
+
     (Json("three" := "not a number") match {
       case Test.three(i) => i
       case _ => "wrong type"
     }) should equal ("wrong type")
+
+    (jEmptyObject match {
+      case Test.two(None) => true
+      case _ => false
+    }) should be (true)
+  }
+
+  test("Loose codecs") {
+    import LooseCodecs._
+
+    object Test extends Contract {
+      val one = \[String]("one")
+      val two = \?[Boolean]("two")
+      val three = \![Int]("three", 3)
+    }
+    (Json("three" := "4") match {
+      case Test.three(i) => i
+      case _ => false
+    }) should equal (4)
+
+    (Json("two" := "false") match {
+      case Test.two(Some(i)) => true
+      case _ => false
+    }) should equal (true)
+
+    (Json("two" := jNull) match {
+      case Test.two(None) => true
+      case _ => false
+    }) should be (true)
+
+    (Json("two" := "text") match {
+      case Test.two(None) => true
+      case _ => false
+    }) should be (true)
   }
 
   test("Nested pattern matching") {
@@ -153,13 +207,26 @@ class ContractTests extends FunSuite with Matchers {
     }) should equal (3.0)
   }
 
-  test("nested codec") {
-    object T extends Contract {
-      val t1 = new \\?("t1") {
-        val t2 = \:?[Json]("t2")
+//  test("nested codec") {
+//    object T extends Contract {
+//      val t1 = new \\?("t1") {
+//        val t2 = \:?[Json]("t2")
+//      }
+//    }
+//  }
 
-      }
+  test("Type contracts") {
+    object Existence extends ContractType("req") {
+      val req = \[String]("req")
+      val value = \[Boolean]("value")
     }
+    (Json("req" := "test") match {
+      case Existence(_) => true
+    }) should be (true)
 
+    (Json("value" := "test") match {
+      case Existence(_) => true
+      case _ => false
+    }) should be (false)
   }
 }

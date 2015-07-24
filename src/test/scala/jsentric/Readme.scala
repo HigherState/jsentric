@@ -89,4 +89,11 @@ class Readme {
     val created = new \\("created", immutable) with UserTimestamp
     val modified = new \\("modified") with UserTimestamp
   }
+
+  //try to force a match even if wrong type
+  import LooseCodecs._
+  Json("orderId" := "23628") match {
+    case Order.orderId(Some(id)) => id
+  }
+
 }

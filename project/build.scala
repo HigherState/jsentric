@@ -13,7 +13,7 @@ object build extends Build {
 
   lazy val commonSettings = Seq(
     organization := "io.higherstate",
-    version := "1.0-M1",
+    version := "1.0-M2",
     scalaVersion := scala,
     scalacOptions ++= Seq("-feature", "-deprecation","-language:implicitConversions","-language:reflectiveCalls","-unchecked"),
     javacOptions ++= Seq("-target", "1.7", "-source", "1.7", "-Xlint:deprecation"),

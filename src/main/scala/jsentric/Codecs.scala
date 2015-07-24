@@ -88,6 +88,15 @@ trait Codecs extends EncodeJsons with DecodeJsons {
 
 trait LooseCodecs extends Codecs {
 
+  override implicit def BooleanDecodeJson: DecodeJson[Boolean] = {
+    optionDecoder( x =>
+      x.bool.orElse(x.string.collect {
+        case t if t.equalsIgnoreCase("true") => true
+        case f if f.equalsIgnoreCase("false") => false
+      })
+    , "Boolean")
+  }
+
   implicit lazy val jSeqCodec:CodecJson[Seq[Json]] =
     seqCodec(jsonCodec)
 
@@ -206,5 +215,5 @@ trait StrictCodecs extends Codecs {
 }
 
 
-object StrictCodecs extends Codecs
-object LooseCodecs extends Codecs
+object StrictCodecs extends StrictCodecs
+object LooseCodecs extends LooseCodecs

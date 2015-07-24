@@ -70,7 +70,11 @@ class PropertyValidation[T](val prop:Property[T]) extends AnyVal {
     ((value, currentState, prop) match {
       case (None, None, p: Expected[_]) =>
         Seq("Value required." -> path)
-      case (Some(v), c, _) if prop.codec.decodeJson(v).isError =>
+      case (Some(v), c, p: Expected[_]) if prop.codec.decodeJson(v).isError =>
+        Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
+      case (Some(v), c, p: Maybe[_]) if p.optionCodec.decodeJson(v).isError =>
+        Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
+      case (Some(v), c, p: Default[_]) if p.optionCodec.decodeJson(v).isError =>
         Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
       case (Some(v), c, b:BaseContract) =>
         new BaseContractValidation(b).$validate(v, c, path)
@@ -79,7 +83,7 @@ class PropertyValidation[T](val prop:Property[T]) extends AnyVal {
     }) ++ prop.validator.validate(value, currentState, path)
 }
 
-object ValidationPropertyCache {
+private object ValidationPropertyCache {
   private var properties:Map[Class[_], Seq[Property[_]]] = Map.empty
   private var internal:Map[Class[_], Seq[Property[_]]] = Map.empty
   def getProperties(contract:BaseContract):Seq[Property[_]] =

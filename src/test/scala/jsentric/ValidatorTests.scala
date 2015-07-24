@@ -29,7 +29,6 @@ class ValidatorTests extends FunSuite with Matchers {
     val json2 = Json("expected" := "value", "maybe" := 4)
     StrValid.$validate(json2) should be (\/-(json2))
     StrValid.$validate(Json("expected" := "value", "maybe" := 4.6)) should be (-\/(NonEmptyList("Unexpected type 'JNumber'." -> Path("maybe"))))
-    StrValid.$validate(Json("expected" := "value", "maybe" -> jNull)) should be (-\/(NonEmptyList("Unexpected type 'JNull$'." -> Path("maybe"))))
 
     val json3 = Json("expected" := "value", "default" := true)
     StrValid.$validate(json3) should be (\/-(json3))
@@ -37,7 +36,7 @@ class ValidatorTests extends FunSuite with Matchers {
 
     val json4 = Json("expected" := "value", "option" := "value")
     StrValid.$validate(json4) should be (\/-(json4))
-    val json5 = Json("expected" := "value", "option" := jNull)
+    val json5 = Json("expected" := "value", "maybe" := jNull, "option" := jNull)
     StrValid.$validate(json5) should be (\/-(json5))
     StrValid.$validate(Json("expected" := "value", "option" := false)) should be (-\/(NonEmptyList("Unexpected type 'JBool'." -> Path("option"))))
   }
@@ -100,5 +99,30 @@ class ValidatorTests extends FunSuite with Matchers {
     val compare = Json("compare" := 5)
     Custom.$validate(compare, Json("compare" := 7)) should be (\/-(compare))
     Custom.$validate(compare, Json("compare" := 0)) should be (-\/(NonEmptyList("Cannot change by more than three" -> Path("compare"))))
+  }
+
+  test("Delta validation") {
+
+    object Delta extends Contract {
+      val expected = \[String]("expected")
+      val immute = \[Boolean]("immute", immutable)
+      val maybe = \?[Int]("maybe")
+      val reserve = \?[Float]("reserve", reserved)
+    }
+
+    val replaceExpected = Json("expected" := "replace")
+    val replaceImmute = Json("immute" := true)
+    val replaceMaybe = Json("maybe" := 123)
+    val clearMaybe = Json("maybe" -> jNull)
+    val replaceReserve = Json("reserve" := 12.3)
+    Delta.$validate(replaceExpected, Json("expected" := "original", "immute" := false)) should be (\/-(replaceExpected))
+    Delta.$validate(replaceImmute, Json("expected" := "original", "immute" := false)) should be (-\/(NonEmptyList("Value is immutable and cannot be changed." -> Path("immute"))))
+    Delta.$validate(replaceImmute, Json("expected" := "original", "immute" := true)) should be (\/-(replaceImmute))
+
+    Delta.$validate(replaceMaybe, Json("expected" := "original", "immute" := false)) should be (\/-(replaceMaybe))
+    Delta.$validate(replaceMaybe, Json("expected" := "original", "immute" := false, "maybe" := 1)) should be (\/-(replaceMaybe))
+    Delta.$validate(clearMaybe, Json("expected" := "original", "immute" := false)) should be (\/-(clearMaybe))
+    Delta.$validate(clearMaybe, Json("expected" := "original", "immute" := false, "maybe" := 1)) should be (\/-(clearMaybe))
+    Delta.$validate(replaceReserve, Json("expected" := "original", "immute" := false, "maybe" := 1)) should be (-\/(NonEmptyList("Value is reserved and cannot be provided." -> Path("reserve"))))
   }
 }
