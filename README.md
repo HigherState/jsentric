@@ -13,9 +13,9 @@ jsentric works by describing a singleton contract which represents data we might
 
 ```scala
     /*define a contract,
-    /  /?  /! expected, optional, default properties
-    /: /:?  /:!  expected, optional, default array properties
-    // //? expected, option object properties
+    \  \?  \! expected, optional, default properties
+    \: \:?  \:!  expected, optional, default array properties
+    \\ \\? expected, option object properties
    */
   object Order extends Contract {
     val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
