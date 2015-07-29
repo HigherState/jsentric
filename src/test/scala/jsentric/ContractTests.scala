@@ -67,8 +67,8 @@ class ContractTests extends FunSuite with Matchers {
     }) should be (true)
   }
 
-  test("Loose codecs") {
-    import LooseCodecs._
+  test("Optimistic codecs") {
+    import OptimisticCodecs._
 
     object Test extends Contract {
       val one = \[String]("one")
@@ -166,6 +166,25 @@ class ContractTests extends FunSuite with Matchers {
     }) should equal (Seq(1, 2))
   }
 
+  test("Optimistic array pattern") {
+    import OptimisticCodecs._
+
+    object OptimisticArr extends Contract {
+      val exp = \:[String]("exp")
+      val maybe = \:?[Int]("maybe")
+    }
+
+    (Json("exp" -> jArrayElements(jString("one"), jTrue, jString("three"))) match {
+      case OptimisticArr.exp(seq) => seq
+      case _ => "wrong type"
+    }) should equal (Seq("one", "three"))
+
+    (Json("maybe" := "value") match {
+      case OptimisticArr.maybe(None) => true
+    }) should be (true)
+
+  }
+
   test("Dynamic property") {
     object Dyn extends Contract {
        val nest = new \\("nest") {}
@@ -207,13 +226,13 @@ class ContractTests extends FunSuite with Matchers {
     }) should equal (3.0)
   }
 
-//  test("nested codec") {
-//    object T extends Contract {
-//      val t1 = new \\?("t1") {
-//        val t2 = \:?[Json]("t2")
-//      }
-//    }
-//  }
+  test("nested codec") {
+    object T extends Contract {
+      val t1 = new \\?("t1") {
+        val t2 = \:?[Json]("t2")
+      }
+    }
+  }
 
   test("Type contracts") {
     object Existence extends ContractType("req") {
@@ -228,5 +247,15 @@ class ContractTests extends FunSuite with Matchers {
       case Existence(_) => true
       case _ => false
     }) should be (false)
+  }
+
+  test("Value contract") {
+    object MapContract extends ValueContract[Map[String, Boolean]]()
+
+    (Json("value1" := true, "value2" := false) match {
+      case MapContract(m) => m.size
+    }) should be (2)
+
+
   }
 }

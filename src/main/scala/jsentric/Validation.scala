@@ -70,11 +70,7 @@ class PropertyValidation[T](val prop:Property[T]) extends AnyVal {
     ((value, currentState, prop) match {
       case (None, None, p: Expected[_]) =>
         Seq("Value required." -> path)
-      case (Some(v), c, p: Expected[_]) if prop.codec.decodeJson(v).isError =>
-        Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
-      case (Some(v), c, p: Maybe[_]) if p.optionCodec.decodeJson(v).isError =>
-        Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
-      case (Some(v), c, p: Default[_]) if p.optionCodec.decodeJson(v).isError =>
+      case (Some(v), c, p) if !p.isValidType(v) =>
         Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
       case (Some(v), c, b:BaseContract) =>
         new BaseContractValidation(b).$validate(v, c, path)

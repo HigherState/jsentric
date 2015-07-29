@@ -178,7 +178,7 @@ class JsonLens[T](val json:Json) extends AnyVal with Functions {
 
 class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {
   def $at(index:Int) =
-    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec, prop.optionElementCodec)
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec, prop.strictness)
 
   def $head = $at(0)
 
@@ -196,7 +196,7 @@ class ArrayLens[T](val prop: \:[T]) extends AnyVal with Functions {
 
 class MaybeArrayLens[T](val prop: \:?[T]) extends AnyVal with Functions {
   def $at(index:Int) =
-    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec, prop.optionElementCodec)
+    new Maybe[T](Path(index), prop.absolutePath \ index, EmptyValidator)(prop.elementCodec, prop.strictness)
 
   def $head = $at(0)
 

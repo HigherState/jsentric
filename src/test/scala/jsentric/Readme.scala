@@ -78,6 +78,7 @@ class Readme {
   val statusDelta = Order.$create(_.status.$set("processing"))
   //validate against current state
   Order.$validate(statusDelta, pending)
+  //apply delta to current state
   val processing = pending.delta(statusDelta)
 
   //Define subcontract for reusable or recursive structures
@@ -91,7 +92,7 @@ class Readme {
   }
 
   //try to force a match even if wrong type
-  import LooseCodecs._
+  import OptimisticCodecs._
   Json("orderId" := "23628") match {
     case Order.orderId(Some(id)) => id
   }

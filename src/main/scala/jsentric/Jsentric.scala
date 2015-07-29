@@ -4,7 +4,7 @@ import argonaut._
 
 
 object Jsentric extends
-  StrictCodecs with
+  PessimisticCodecs with
   Validation with
   Lens with
   Query with

@@ -86,7 +86,9 @@ trait Codecs extends EncodeJsons with DecodeJsons {
     )
 }
 
-trait LooseCodecs extends Codecs {
+trait OptimisticCodecs extends Codecs {
+
+  implicit val maybeStrictness:MaybeStrictness = MaybeOptimistic
 
   override implicit def BooleanDecodeJson: DecodeJson[Boolean] = {
     optionDecoder( x =>
@@ -143,9 +145,11 @@ trait LooseCodecs extends Codecs {
     )
 }
 
-trait StrictCodecs extends Codecs {
+trait PessimisticCodecs extends Codecs {
   import scalaz._
   import Scalaz._
+
+  implicit val maybeStrictness:MaybeStrictness = MaybeNull
 
   override implicit def DoubleDecodeJson: DecodeJson[Double] =
     optionDecoder(x => x.number.map(_.toDouble), "Double")
@@ -215,5 +219,5 @@ trait StrictCodecs extends Codecs {
 }
 
 
-object StrictCodecs extends StrictCodecs
-object LooseCodecs extends LooseCodecs
+object PessimisticCodecs extends PessimisticCodecs
+object OptimisticCodecs extends OptimisticCodecs
