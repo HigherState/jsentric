@@ -54,6 +54,23 @@ class QueryTests extends FunSuite with Matchers {
     query3.isMatch(Json("field" := "TEST3")) should be (false)
     query3.isMatch(Json("field" := "TEST3", "nested" -> Json("field2" := 3))) should be (false)
     query3.isMatch(Json("nested" -> Json("field2" := 3))) should be (false)
+
+    //TODO not a generalised solution
+    val query4 = Query2.field.$like("value")
+    query4.isMatch(Json("field" := "Value")) should be (true)
+    query4.isMatch(jEmptyObject) should be (false)
+    query4.isMatch(Json("field" := "Values")) should be (false)
+
+    val query5 = Query2.field.$like("%lue")
+    query5.isMatch(Json("field" := "ValuE")) should be (true)
+    query5.isMatch(jEmptyObject) should be (false)
+    query5.isMatch(Json("field" := "Values")) should be (false)
+
+    val query6 = Query2.field.$regex("vaLUe", "i")
+    query6.isMatch(Json("field" := "Value")) should be (true)
+    query6.isMatch(jEmptyObject) should be (false)
+    query6.isMatch(Json("field" := "Values")) should be (false)
+
   }
 
   test("element match") {

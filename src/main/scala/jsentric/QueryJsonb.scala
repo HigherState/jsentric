@@ -21,23 +21,28 @@ object QueryJsonb {
 
 
   private def buildTree(query:JsonObject, path:Path):Tree = {
-    &(query.toList.map{
+    &(query.toList.flatMap{
       case ("$and", JArray(values)) =>
-        &(values.flatMap(_.obj.map(buildTree(_, path))))
+        Some(&(values.flatMap(_.obj.map(buildTree(_, path)))))
       case ("$or", JArray(values)) =>
-        |(values.flatMap(_.obj.map(buildTree(_, path))))
+        Some(|(values.flatMap(_.obj.map(buildTree(_, path)))))
       case ("$not", JObject(value)) =>
-        !!(buildTree(value, path))
+        Some(!!(buildTree(value, path)))
       case ("$elemMatch", JObject(value)) =>
-        ∃(path, buildTree(value, Path.empty))
+        Some(∃(path, buildTree(value, Path.empty)))
       case ("$elemMatch", j) =>
-        ∃(path, ?(Path.empty, "$eq", j))
-      case (o@("$eq" | "$ne" | "$lt" | "$gt" | "$lte" | "$gte" | "$in" | "$nin" | "$exists"), v) =>
-        ?(path, o, v)
+        Some(∃(path, ?(Path.empty, "$eq", j)))
+      case (o@("$eq" | "$ne" | "$lt" | "$gt" | "$lte" | "$gte" | "$in" | "$nin" | "$exists" | "$like"), v) =>
+        Some(?(path, o, v))
+      case ("$regex", JString(s)) =>
+        val options = query("$options").collect{ case JString(o) => s"(?$o)"}.getOrElse("")
+        Some(?(path, "$regex", jString(options + s)))
+      case ("$options", _) =>
+        None
       case (key, JObject(v)) =>
-        buildTree(v, path \ key)
+        Some(buildTree(v, path \ key))
       case (key, j) =>
-        ?(path \ key, "$eq", j)
+        Some(?(path \ key, "$eq", j))
     }.toSeq)
   }
 
@@ -61,6 +66,10 @@ object QueryJsonb {
       \/-(field +: " @> '" +: toObject(path.segments, value) :+ "'::jsonb")
     case (?(path, "$ne", value), _) =>
       \/-("NOT " +: field +: " @> '" +: toObject(path.segments, value) :+ "'::jsonb")
+    case (?(path, "$like", JString(value)), _) =>
+      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ILIKE '" +: value +: Vector("'"))
+    case (?(path, "$regex", JString(value)), _) =>
+      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ~ '" +: value +: Vector("'"))
     case (?(path, "$in", value), _) if value.isArray =>
       \/-(Vector(field, " #> '", toPath(path), "' <@ '", escape(value.toString()), "'::jsonb"))
     case (?(path, "$nin", value), _) if value.isArray =>
@@ -145,6 +154,7 @@ object QueryJsonb {
     case (_, path) =>
       -\/(NonEmptyList("Unsupported type" -> path))
   }
+
   object Op {
     def unapply(op: String): Option[String] =
       op match {

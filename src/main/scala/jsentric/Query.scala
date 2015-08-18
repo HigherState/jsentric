@@ -1,5 +1,6 @@
 package jsentric
 
+import scala.util.matching.Regex
 import scalaz._
 import Scalaz._
 import argonaut._
@@ -19,6 +20,9 @@ trait Query extends Functions with Lens {
 
   implicit def numericQuery[T >: JNumeric](prop:Property[T]):NumericQuery[T] =
     new NumericQuery(prop)
+
+  implicit def stringQuery[T >: JOptionable[String]](prop:Property[T]):StringQuery[T] =
+    new StringQuery(prop)
 
   implicit class ArrayQuery[T](val prop: Expected[Seq[T]])(implicit codec: CodecJson[T]) {
 
@@ -64,8 +68,8 @@ trait Query extends Functions with Lens {
 }
 
 object Query {
-  private[jsentric] def apply(value:Option[Json], query:JsonObject):Boolean =
-    query.toList.forall{
+  private[jsentric] def apply(value:Option[Json], query:JsonObject):Boolean = {
+    query.toList.forall {
       case ("$and", JArray(values)) =>
         values.flatMap(_.obj).forall(apply(value, _))
       case ("$or", JArray(values)) =>
@@ -74,6 +78,18 @@ object Query {
         value.contains(v)
       case ("$ne", v) =>
         !value.contains(v) //neq doesnt require existence, as per mongodb
+      case ("$regex" | "$options", _) =>
+        query("$regex").collect{
+          case JString(v) =>
+            val options = query("$options").collect{ case JString(o) => s"(?$o)"}.getOrElse("")
+            value.collect { case JString(s) => (options + v).r.pattern.matcher(s).matches }.getOrElse(false)
+        }.getOrElse(false)
+
+      case ("$like", JString(v)) =>
+        value.collect {
+          case JString(s) =>
+            ("(?i)" + v.replace("%", ".*")).r.pattern.matcher(s).matches
+        }.getOrElse(false)
       case ("$lt", v) =>
         value.exists(order.lift(_, v).contains(Ordering.LT))
       case ("$gt", v) =>
@@ -91,16 +107,17 @@ object Query {
       case ("$not", v) =>
         v.obj.exists(o => !apply(value, o))
       case ("$elemMatch", JObject(j)) =>
-        value.collect{ case JArray(seq) => seq.exists(s => apply(Some(s), j))}.getOrElse(false)
+        value.collect { case JArray(seq) => seq.exists(s => apply(Some(s), j)) }.getOrElse(false)
       case ("$elemMatch", v) =>
-        value.collect{ case JArray(seq) => seq.contains(v)}.getOrElse(false)
+        value.collect { case JArray(seq) => seq.contains(v) }.getOrElse(false)
       case (key, JObject(obj)) =>
         apply(value.flatMap(_.field(key)), obj)
       case (key, v) =>
-        value.flatMap(_.obj).fold(false){l =>
+        value.flatMap(_.obj).fold(false) { l =>
           l(key).contains(v)
         }
     }
+  }
 
   private[jsentric] def pathToObject(path:Segments,obj:Json):Json= {
     path match {
@@ -173,6 +190,17 @@ class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
 
   def $gte(value:Double) = nest(Json("$gt" -> jNumberOrString(value)))
   def $gte(value:Long) = nest(Json("$gt" -> jNumber(value)))
+
+  private def nest(obj:Json) =
+    Query.pathToObject(prop.absolutePath.segments, obj)
+}
+
+class StringQuery[T >: JOptionable[String]](val prop:Property[T]) extends AnyVal {
+
+  def $regex(value:String) = nest(Json("$regex" := value))
+  def $regex(value:String, options:String) = nest(Json("$regex" := value, "$options" := options))
+  def $regex(r:Regex) = nest(Json("$regex" := r.regex))
+  def $like(value:String) = nest(Json("$like" := value))
 
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)

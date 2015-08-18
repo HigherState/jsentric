@@ -15,6 +15,7 @@ class QueryJsonbTests extends FunSuite with Matchers {
       val bool = \[Boolean]("bool")
       val nested = new \\("nested") {
         val double = \[Double]("double")
+        val string = \?[String]("string")
       }
     }
     val exists = SimpleObject.int.$exists(true)
@@ -28,6 +29,9 @@ class QueryJsonbTests extends FunSuite with Matchers {
     val nin = SimpleObject.string.$nin("value", "value2")
     val nt = Jsentric.not(SimpleObject.string.$eq("value"))
     val nested = SimpleObject.nested.double.$lte(34)
+    val like = SimpleObject.nested.string.$like("%tr%")
+    val regex = SimpleObject.nested.string.$regex(".ES.*", "i")
+
 
 
     QueryJsonb("content", exists) should be (\/-("content ?? 'int'"))
@@ -41,6 +45,8 @@ class QueryJsonbTests extends FunSuite with Matchers {
     QueryJsonb("content", nin) should be (\/-("NOT content #> '{string}' <@ '[\"value\",\"value2\"]'::jsonb"))
     QueryJsonb("content", nt) should be (\/-("NOT (content @> '{\"string\":\"value\"}'::jsonb)"))
     QueryJsonb("content", nested) should be (\/-("(jsonb_typeof(content #> '{nested,double}') = 'number' AND (content #>> '{nested,double}') :: NUMERIC < 34)"))
+    QueryJsonb("content", like) should be (\/-("(content #>> '{nested,string}') ILIKE '%tr%'"))
+    QueryJsonb("content", regex) should be (\/-("(content #>> '{nested,string}') ~ '(?i).ES.*'"))
   }
 
 
