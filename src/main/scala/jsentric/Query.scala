@@ -139,7 +139,7 @@ object Query {
 }
 
 class JsonQueryExt(val json:Json) extends AnyVal with Functions {
-  def isMatch(value:Json) =
+  def $isMatch(value:Json) =
     json.obj.fold(json == value){o => Query.apply(Some(value), o)}
 
   def &&(d:Json):Json =
@@ -207,5 +207,3 @@ class StringQuery[T >: JOptionable[String]](val prop:Property[T]) extends AnyVal
   private def nest(obj:Json) =
     Query.pathToObject(prop.absolutePath.segments, obj)
 }
-
-

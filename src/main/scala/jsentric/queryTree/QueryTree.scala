@@ -39,13 +39,19 @@ object QueryTree {
   def partition(tree:Tree, paths:Set[Path]):(Option[Tree], Option[Tree]) = {
     tree match {
       case |(trees) =>
-        val (l,r) = trees.map(partition(_, paths)).unzip
-        val lm = l.flatten
-        if (lm.length != trees.length)
+        val partitioned = trees.map(partition(_, paths))
+        val (l,r) = partitioned.map {
+          case (s, None) => (s, s)
+          case p => p
+        }.unzip
+        if (l.count(_.nonEmpty) < trees.length) //not all elements present in query
           None -> Some(tree)
         else {
-          val rm = r.flatten
-          Some(|(lm)) -> rm.nonEmpty.option(|(rm))
+          val lm = Some(|(l.flatten))
+          if (partitioned.forall(_._2.isEmpty))
+            lm -> None
+          else
+            lm -> Some(|(r.flatten))
         }
 
       case &(trees) =>
@@ -77,13 +83,19 @@ object QueryTree {
         lm.nonEmpty.option(|(lm)) -> rm.nonEmpty.option(|(rm))
 
       case &(trees) =>
-        val (l,r) = trees.map(negPartition(_, paths)).unzip
-        val lm = l.flatten
-        if (lm.length != trees.length)
+        val partitioned = trees.map(negPartition(_, paths))
+        val (l,r) = partitioned.map {
+          case (s, None) => (s, s)
+          case p => p
+        }.unzip
+        if (l.count(_.nonEmpty) < trees.length) //not all elements present in query
           None -> Some(tree)
         else {
-          val rm = r.flatten
-          Some(&(lm)) -> rm.nonEmpty.option(&(rm))
+          val lm = Some(&(l.flatten))
+          if (partitioned.forall(_._2.isEmpty))
+            lm -> None
+          else
+            lm -> Some(&(r.flatten))
         }
 
       case ?(path, _, _) =>
@@ -96,7 +108,7 @@ object QueryTree {
 
       case !!(t) =>
         val (l, r) = partition(t, paths)
-        l.map(!!(_)) -> r.map(!!(_))
+        l.map(!!) -> r.map(!!)
     }
   }
 }
