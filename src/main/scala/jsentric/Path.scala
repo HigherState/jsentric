@@ -8,6 +8,11 @@ case class Path(segments:Segments) extends AnyVal {
   def \(part:Int) = Path(segments :+ Right(part))
   def ++(path:Path) = Path(segments ++ path.segments)
 
+  def hasSubPath(path:Path) =
+    path.segments.zip(segments).foldLeft(true) {
+      case (a, (s, p)) =>  a && s == p
+    }
+
   //TODO handle chars \ " etc
   override def toString =
     segments.map(_.merge).mkString("\\")

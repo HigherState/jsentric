@@ -2,6 +2,8 @@ package jsentric
 
 import argonaut._
 import Argonaut._
+import queryTree._
+import queryTree.Tree
 import scalaz._
 import Scalaz._
 
@@ -16,35 +18,9 @@ object QueryJsonb {
 
   def apply(field:String, query:Json): JbValid =
     query.obj.fold[JbValid](\/-(s"Value = ${escape(query.toString())}::jsonb")){ j =>
-      treeToPostgres(field)(buildTree(j, Path.empty), false).map(_.mkString)
+      treeToPostgres(field)(QueryTree(j), false).map(_.mkString)
     }
 
-
-  private def buildTree(query:JsonObject, path:Path):Tree = {
-    &(query.toList.flatMap{
-      case ("$and", JArray(values)) =>
-        Some(&(values.flatMap(_.obj.map(buildTree(_, path)))))
-      case ("$or", JArray(values)) =>
-        Some(|(values.flatMap(_.obj.map(buildTree(_, path)))))
-      case ("$not", JObject(value)) =>
-        Some(!!(buildTree(value, path)))
-      case ("$elemMatch", JObject(value)) =>
-        Some(∃(path, buildTree(value, Path.empty)))
-      case ("$elemMatch", j) =>
-        Some(∃(path, ?(Path.empty, "$eq", j)))
-      case (o@("$eq" | "$ne" | "$lt" | "$gt" | "$lte" | "$gte" | "$in" | "$nin" | "$exists" | "$like"), v) =>
-        Some(?(path, o, v))
-      case ("$regex", JString(s)) =>
-        val options = query("$options").collect{ case JString(o) => s"(?$o)"}.getOrElse("")
-        Some(?(path, "$regex", jString(options + s)))
-      case ("$options", _) =>
-        None
-      case (key, JObject(v)) =>
-        Some(buildTree(v, path \ key))
-      case (key, j) =>
-        Some(?(path \ key, "$eq", j))
-    }.toSeq)
-  }
 
   private def treeToPostgres(field:String):Function[(Tree, Boolean), NonEmptyList[(String, Path)] \/ Vector[String]] = {
     case (&(Seq(value)), g) =>
@@ -178,12 +154,7 @@ object QueryJsonb {
     }
   }
 
-  private trait Tree
-  private case class ?(path:Path, op:String, value:Json) extends Tree
-  private case class ∃(path:Path, tree:Tree) extends Tree
-  private case class &(seq:Seq[Tree]) extends Tree
-  private case class |(seq:Seq[Tree]) extends Tree
-  private case class !!(tree:Tree) extends Tree
+
 }
 
 

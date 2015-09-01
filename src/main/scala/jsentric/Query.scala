@@ -134,6 +134,8 @@ object Query {
     case (JDouble(x), JLong(y)) => x ?|? y
     case (JLong(x), JDouble(y)) => x.toDouble ?|? y
   }
+
+
 }
 
 class JsonQueryExt(val json:Json) extends AnyVal with Functions {
