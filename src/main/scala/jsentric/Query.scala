@@ -6,6 +6,8 @@ import Scalaz._
 import argonaut._
 import Argonaut._
 import Lens._
+import queryTree._
+import queryTree.Tree
 
 trait Query extends Functions with Lens {
 
@@ -75,9 +77,9 @@ object Query {
       case ("$or", JArray(values)) =>
         values.flatMap(_.obj).exists(apply(value, _))
       case ("$eq", v) =>
-        value.contains(v)
+        value.exists(order.lift(_, v).contains(Ordering.EQ))
       case ("$ne", v) =>
-        !value.contains(v) //neq doesnt require existence, as per mongodb
+        !value.exists(order.lift(_, v).contains(Ordering.EQ))
       case ("$regex" | "$options", _) =>
         query("$regex").collect{
           case JString(v) =>
@@ -116,6 +118,41 @@ object Query {
         value.flatMap(_.obj).fold(false) { l =>
           l(key).contains(v)
         }
+    }
+  }
+
+  private[jsentric] def apply(value:Json, query:Tree):Boolean = {
+    query match {
+      case &(trees) =>
+        trees.forall(t => this(value, t))
+      case |(trees) =>
+        trees.exists(t => this(value, t))
+      case !!(tree) =>
+        !this(value, tree)
+      case ?(Path(segments), "$eq", v) =>
+        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.EQ))
+      case ?(Path(segments), "$ne", v) =>
+        !getValue(value, segments).exists(order.lift(_, v).contains(Ordering.EQ))
+      case /(Path(segments), regex) =>
+        getValue(value, segments).flatMap(_.string).exists(s => regex.pattern.matcher(s).matches)
+      case %(Path(segments), _, regex) =>
+        getValue(value, segments).flatMap(_.string).exists(s => regex.pattern.matcher(s).matches)
+      case ?(Path(segments), "$lt", v) =>
+        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.LT))
+      case ?(Path(segments), "$gt", v) =>
+        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.GT))
+      case ?(Path(segments), "$lte", v) =>
+        getValue(value, segments).exists(order.lift(_, v).exists(r => r == Ordering.LT || r == Ordering.EQ))
+      case ?(Path(segments), "$gte", v) =>
+        getValue(value, segments).exists(order.lift(_, v).exists(r => r == Ordering.GT || r == Ordering.EQ))
+      case ?(Path(segments), "$in", JArray(values)) =>
+        getValue(value, segments).exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
+      case ?(Path(segments), "$nin", JArray(values)) =>
+        !getValue(value, segments).exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
+      case ?(Path(segments), "$exists", JBool(v)) =>
+        getValue(value, segments).nonEmpty == v
+      case ∃(Path(segments), subQuery) =>
+        getValue(value, segments).collect { case JArray(seq) => seq.exists(s => apply(s, subQuery)) }.getOrElse(false)
     }
   }
 

@@ -35,10 +35,10 @@ class QueryTreeTests extends FunSuite with Matchers {
     QueryTree.partition(orAnd, Set()) should equal (None -> Some(orAnd))
     QueryTree.partition(orAnd, Set("and1", "and2")) should equal (None -> Some(orAnd))
     QueryTree.partition(orAnd, Set("and1", "and3")) should equal (
-      Some(|(Seq(&(Seq(op("and1"))), &(Seq(op("and3")))))) -> Some(|(Seq(&(Seq(op("and2"))), &(Seq(op("and4"))))))
+      Some(|(Seq(&(Seq(op("and1"))), &(Seq(op("and3")))))) -> Some(orAnd)
     )
     QueryTree.partition(orAnd, Set("and1", "and2", "and3")) should equal (
-      Some(|(Seq(&(Seq(op("and1"), op("and2"))), &(Seq(op("and3")))))) -> Some(|(Seq(&(Seq(op("and1"), op("and2"))), &(Seq(op("and4"))))))
+      Some(|(Seq(&(Seq(op("and1"), op("and2"))), &(Seq(op("and3")))))) -> Some(orAnd)
     )
 
     val notAnd = !!(and)
@@ -56,7 +56,7 @@ class QueryTreeTests extends FunSuite with Matchers {
       Some(&(List(op("a")))) -> Some(&(List(!!(&(List(op("b"), !!(&(List(op("c"), op("d"))))))))))
     )
     QueryTree.partition(notAndSeq, Set("b", "c")) should equal (
-      Some(&(Seq(!!(&(Seq(op("b"), !!(&(Seq(op("c")))))))))) -> Some(&(Seq(op("a"), !!(&(Seq(op("b"), !!(&(Seq(op("d"))))))))))
+      Some(&(Seq(!!(&(Seq(op("b"), !!(&(Seq(op("c")))))))))) -> Some(notAndSeq)
     )
   }
 }

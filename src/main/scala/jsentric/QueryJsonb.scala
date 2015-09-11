@@ -15,11 +15,13 @@ object QueryJsonb {
 
   type JbValid = NonEmptyList[(String, Path)] \/ String
 
-
   def apply(field:String, query:Json): JbValid =
     query.obj.fold[JbValid](\/-(s"Value = ${escape(query.toString())}::jsonb")){ j =>
       treeToPostgres(field)(QueryTree(j), false).map(_.mkString)
     }
+
+  def apply(field:String, query:Tree): JbValid =
+    treeToPostgres(field)(query, false).map(_.mkString)
 
 
   private def treeToPostgres(field:String):Function[(Tree, Boolean), NonEmptyList[(String, Path)] \/ Vector[String]] = {
@@ -38,14 +40,14 @@ object QueryJsonb {
     case (!!(tree), g) =>
       treeToPostgres(field)(tree, false).map(v => "NOT (" +: v :+ ")")
     //TODO empty Path
+    case (/(path, regex), _) =>
+      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ~ '" +: regex.toString +: Vector("'"))
+    case (%(path, like, _), _) =>
+      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ILIKE '" +: like +: Vector("'"))
     case (?(path, "$eq", value), _) =>
       \/-(field +: " @> '" +: toObject(path.segments, value) :+ "'::jsonb")
     case (?(path, "$ne", value), _) =>
       \/-("NOT " +: field +: " @> '" +: toObject(path.segments, value) :+ "'::jsonb")
-    case (?(path, "$like", JString(value)), _) =>
-      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ILIKE '" +: value +: Vector("'"))
-    case (?(path, "$regex", JString(value)), _) =>
-      \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ~ '" +: value +: Vector("'"))
     case (?(path, "$in", value), _) if value.isArray =>
       \/-(Vector(field, " #> '", toPath(path), "' <@ '", escape(value.toString()), "'::jsonb"))
     case (?(path, "$nin", value), _) if value.isArray =>

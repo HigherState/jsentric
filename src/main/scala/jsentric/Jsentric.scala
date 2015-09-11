@@ -2,12 +2,12 @@ package jsentric
 
 import argonaut._
 
-
 object Jsentric extends
   PessimisticCodecs with
   Validation with
   Lens with
   Query with
+  Projection with
   ACursors with
   Contexts with
   Cursors with

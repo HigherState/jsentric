@@ -22,11 +22,13 @@ object QueryTree {
         Some(∃(path, buildTree(value, Path.empty)))
       case ("$elemMatch", j) =>
         Some(∃(path, ?(Path.empty, "$eq", j)))
-      case (o@("$eq" | "$ne" | "$lt" | "$gt" | "$lte" | "$gte" | "$in" | "$nin" | "$exists" | "$like"), v) =>
+      case (o@("$eq" | "$ne" | "$lt" | "$gt" | "$lte" | "$gte" | "$in" | "$nin" | "$exists"), v) =>
         Some(?(path, o, v))
       case ("$regex", JString(s)) =>
         val options = query("$options").collect{ case JString(o) => s"(?$o)"}.getOrElse("")
-        Some(?(path, "$regex", jString(options + s)))
+        Some(/(path, (options + s).r))
+      case ("$like", JString(s)) =>
+        Some(%(path, s, ("(?i)" + s.replace("%", ".*")).r))
       case ("$options", _) =>
         None
       case (key, JObject(v)) =>
@@ -39,19 +41,15 @@ object QueryTree {
   def partition(tree:Tree, paths:Set[Path]):(Option[Tree], Option[Tree]) = {
     tree match {
       case |(trees) =>
-        val partitioned = trees.map(partition(_, paths))
-        val (l,r) = partitioned.map {
-          case (s, None) => (s, s)
-          case p => p
-        }.unzip
+        val (l,r) = trees.map(partition(_, paths)).unzip
         if (l.count(_.nonEmpty) < trees.length) //not all elements present in query
           None -> Some(tree)
         else {
           val lm = Some(|(l.flatten))
-          if (partitioned.forall(_._2.isEmpty))
+          if (r.forall(_.isEmpty))
             lm -> None
           else
-            lm -> Some(|(r.flatten))
+            lm -> Some(tree)
         }
 
       case &(trees) =>
@@ -61,6 +59,14 @@ object QueryTree {
         lm.nonEmpty.option(&(lm)) -> rm.nonEmpty.option(&(rm))
 
       case ?(path, _, _) =>
+        if (paths.exists(path.hasSubPath)) Some(tree) -> None
+        else None -> Some(tree)
+
+      case /(path, _) =>
+        if (paths.exists(path.hasSubPath)) Some(tree) -> None
+        else None -> Some(tree)
+
+      case %(path, _, _) =>
         if (paths.exists(path.hasSubPath)) Some(tree) -> None
         else None -> Some(tree)
 
@@ -83,22 +89,26 @@ object QueryTree {
         lm.nonEmpty.option(|(lm)) -> rm.nonEmpty.option(|(rm))
 
       case &(trees) =>
-        val partitioned = trees.map(negPartition(_, paths))
-        val (l,r) = partitioned.map {
-          case (s, None) => (s, s)
-          case p => p
-        }.unzip
+        val (l,r) = trees.map(negPartition(_, paths)).unzip
         if (l.count(_.nonEmpty) < trees.length) //not all elements present in query
           None -> Some(tree)
         else {
           val lm = Some(&(l.flatten))
-          if (partitioned.forall(_._2.isEmpty))
+          if (r.forall(_.isEmpty))
             lm -> None
           else
-            lm -> Some(&(r.flatten))
+            lm -> Some(tree)
         }
 
       case ?(path, _, _) =>
+        if (paths.exists(path.hasSubPath)) Some(tree) -> None
+        else None -> Some(tree)
+
+      case /(path, _) =>
+        if (paths.exists(path.hasSubPath)) Some(tree) -> None
+        else None -> Some(tree)
+
+      case %(path, _, _) =>
         if (paths.exists(path.hasSubPath)) Some(tree) -> None
         else None -> Some(tree)
 
