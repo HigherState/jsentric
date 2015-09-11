@@ -36,11 +36,11 @@ trait Functions extends Any {
       case (Some(ot), Some(od)) =>
         jObject(od.toList.foldLeft(JsonObject.empty)({
           case (acc, (k, JLong(1))) =>
-            ot(k).fold(ot){v =>
+            ot(k).fold(acc){v =>
               acc.+(k,v)
             }
           case (acc, (k, j)) =>
-            ot(k).fold(ot){v =>
+            ot(k).fold(acc){v =>
               val result = select(v, j)
               if (result.obj.exists(_.isEmpty)) acc
               else acc.+(k, result)
