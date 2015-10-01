@@ -24,7 +24,7 @@ trait Contract extends BaseContract {
     Some(j)
 }
 
-abstract class ContractType(val $key:String, val matcher:Matcher = DefaultMatcher) extends BaseContract {
+abstract class ContractType(val $key:String, val matcher:Matcher = DefaultMatcher) extends BaseContract with Unapplicable[Json] {
   implicit protected def absolutePath: Path = Path.empty
   def unapply(j:Json):Option[Json] =
     j.obj.exists(_($key).exists(matcher.isMatch)).option(j)
