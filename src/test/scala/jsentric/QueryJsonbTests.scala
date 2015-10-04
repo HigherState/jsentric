@@ -9,13 +9,13 @@ class QueryJsonbTests extends FunSuite with Matchers {
 
   test("simple operations") {
     object SimpleObject extends Contract {
-      val int = \?[Int]("int")
-      val string = \[String]("string")
-      val array = \:[Int]("array")
-      val bool = \[Boolean]("bool")
-      val nested = new \\("nested") {
-        val double = \[Double]("double")
-        val string = \?[String]("string")
+      val int = \?[Int]
+      val string = \[String]
+      val array = \:[Int]
+      val bool = \[Boolean]
+      val nested = new \\ {
+        val double = \[Double]
+        val string = \?[String]
       }
     }
     val exists = SimpleObject.int.$exists(true)

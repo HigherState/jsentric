@@ -32,7 +32,7 @@ trait Query extends Functions with Lens {
       nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
 
     private def nest(obj:Json) =
-      Query.pathToObject(prop.absolutePath.segments, obj)
+      Query.pathToObject(Struct.getPath(prop).segments, obj)
   }
 
   implicit class MaybeArrayQuery[T](val prop: Maybe[Seq[T]])(implicit codec: CodecJson[T]) {
@@ -42,7 +42,7 @@ trait Query extends Functions with Lens {
 
 
     private def nest(obj:Json) =
-      Query.pathToObject(prop.absolutePath.segments, obj)
+      Query.pathToObject(Struct.getPath(prop).segments, obj)
   }
 
   implicit class SetQuery[T](val prop: Expected[Set[T]])(implicit codec: CodecJson[T]) {
@@ -52,7 +52,7 @@ trait Query extends Functions with Lens {
 
 
     private def nest(obj:Json) =
-      Query.pathToObject(prop.absolutePath.segments, obj)
+      Query.pathToObject(Struct.getPath(prop).segments, obj)
   }
 
   implicit class MaybeSetQuery[T](val prop: Maybe[Set[T]])(implicit codec: CodecJson[T]) {
@@ -61,7 +61,7 @@ trait Query extends Functions with Lens {
       nest(("$elemMatch" -> f(new EmptyProperty[T])) ->: jEmptyObject)
 
     private def nest(obj:Json) =
-      Query.pathToObject(prop.absolutePath.segments, obj)
+      Query.pathToObject(Struct.getPath(prop).segments, obj)
   }
 
   def not(json:Json) =
@@ -200,20 +200,20 @@ class JsonQueryExt(val json:Json) extends AnyVal with Functions {
 //Handle default?
 class ValueQuery[T](val prop: Property[T]) extends AnyVal {
 
-  def $eq(value:T) = nest(prop.codec(value))
+  def $eq(value:T) = nest(prop._codec(value))
   //Currently not supporting chaining of $ne in an && for the same field
-  def $ne(value:T) = nest(Json("$ne" -> prop.codec(value)))
-  def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop.codec.apply))))
-  def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop.codec.apply))))
+  def $ne(value:T) = nest(Json("$ne" -> prop._codec(value)))
+  def $in(values:T*) = nest(Json("$in" -> jArray(values.toList.map(prop._codec.apply))))
+  def $nin(values:T*) = nest(Json("$nin" -> jArray(values.toList.map(prop._codec.apply))))
 
   private def nest(obj:Json) =
-    Query.pathToObject(prop.absolutePath.segments, obj)
+    Query.pathToObject(Struct.getPath(prop).segments, obj)
 }
 
 class MaybeQuery[T](val prop:Maybe[T]) extends AnyVal {
   def $exists(value:Boolean) = nest(Json("$exists" := value))
   private def nest(obj:Json) =
-    Query.pathToObject(prop.absolutePath.segments, obj)
+    Query.pathToObject(Struct.getPath(prop).segments, obj)
 }
 
 class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
@@ -231,7 +231,7 @@ class NumericQuery[T >: JNumeric](val prop: Property[T]) extends AnyVal {
   def $gte(value:Long) = nest(Json("$gt" -> jNumber(value)))
 
   private def nest(obj:Json) =
-    Query.pathToObject(prop.absolutePath.segments, obj)
+    Query.pathToObject(Struct.getPath(prop).segments, obj)
 }
 
 class StringQuery[T >: JOptionable[String]](val prop:Property[T]) extends AnyVal {
@@ -242,5 +242,5 @@ class StringQuery[T >: JOptionable[String]](val prop:Property[T]) extends AnyVal
   def $like(value:String) = nest(Json("$like" := value))
 
   private def nest(obj:Json) =
-    Query.pathToObject(prop.absolutePath.segments, obj)
+    Query.pathToObject(Struct.getPath(prop).segments, obj)
 }

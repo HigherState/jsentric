@@ -46,5 +46,5 @@ class ProjectionQuery[T](val prop:Property[T]) extends AnyVal {
     nest(jNumber(1))
 
   private def nest(obj:Json) =
-    Query.pathToObject(prop.absolutePath.segments, obj)
+    Query.pathToObject(Struct.getPath(prop).segments, obj)
 }

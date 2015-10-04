@@ -10,18 +10,18 @@ class Readme {
     // //? expected, option object properties
    */
   object Order extends Contract {
-    val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
-    val lastName = \[String]("lastName", nonEmptyOrWhiteSpace)
-    val orderId = \?[Int]("orderId", reserved && immutable)
+    val firstName = \[String](nonEmptyOrWhiteSpace)
+    val lastName = \[String](nonEmptyOrWhiteSpace)
+    val orderId = \?[Int](reserved && immutable)
 
-    val email = new \\("email") {
-      val friendlyName = \?[String]("friendlyName")
-      val address = \[String]("address")
+    val email = new \\ {
+      val friendlyName = \?[String]
+      val address = \[String]
     }
-    val status = \?[String]("status", in("pending", "processing", "sent") && reserved)
-    val notes = \?[String]("notes", internal)
+    val status = \?[String](in("pending", "processing", "sent") && reserved)
+    val notes = \?[String](internal)
 
-    val orderLines = \:[(String, Int)]("orderLines", forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items")))
+    val orderLines = \:[(String, Int)](forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items")))
 
     import Composite._
     //Combine properties to make a composite pattern matcher
@@ -82,13 +82,13 @@ class Readme {
   val processing = pending.delta(statusDelta)
 
   //Define subcontract for reusable or recursive structures
-  trait UserTimestamp extends SubContract {
-    val account = \[String]("account")
-    val timestamp = \[Long]("timestamp")
+  trait UserTimestamp {
+    val account = \[String]
+    val timestamp = \[Long]
   }
   object Element extends Contract {
-    val created = new \\("created", immutable) with UserTimestamp
-    val modified = new \\("modified") with UserTimestamp
+    val created = new \\(immutable) with UserTimestamp
+    val modified = new \\ with UserTimestamp
   }
 
   //try to force a match even if wrong type

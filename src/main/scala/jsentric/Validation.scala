@@ -4,13 +4,13 @@ import argonaut._
 import scalaz._
 
 trait Validation extends Functions {
-  implicit def valueContractValidation[T](contract:ValueContract[T]) =
+  implicit def valueContractValidation[T](contract:ValueContract[T]):ValueContractValidation[T] =
     new ValueContractValidation[T](contract)
 
-  implicit def baseContractValidation(contract:BaseContract) =
+  implicit def baseContractValidation(contract:BaseContract):BaseContractValidation =
     new BaseContractValidation(contract)
 
-  implicit def propertyValidation[T](prop:Property[T]) =
+  implicit def propertyValidation[T](prop:Property[T]):PropertyValidation[T] =
     new PropertyValidation(prop)
 
 }
@@ -35,7 +35,7 @@ class ValueContractValidation[T](val contract:ValueContract[T]) extends AnyVal {
     seqToJValid($validate(deltaContent, currentState, Path.empty), deltaContent)
 
   def $validate(value: Json, currentState: Option[Json], path:Path): Seq[(String, Path)] =
-    contract.validator.validate(Some(value), currentState, path)
+    contract._pathValidator.validate(Some(value), currentState, path)
 
   def $sanitize(json:Json):Json = ???
 }
@@ -53,14 +53,14 @@ class BaseContractValidation(val contract:BaseContract) extends AnyVal with Func
   //TODO better approach here
   def $validate(value: Json, currentState: Option[Json], path:Path): Seq[(String, Path)] =
     ValidationPropertyCache.getProperties(contract).flatMap{p =>
-      val v = getValue(value, p.relativePath.segments)
-      val c = currentState.flatMap(getValue(_, p.relativePath.segments))
-      new PropertyValidation(p).$validate(v, c, path ++ p.relativePath)
+      val v = getValue(value, p._propertyEdge.fold(Path.empty)(_._1).segments)
+      val c = currentState.flatMap(getValue(_, p._propertyEdge.fold(Path.empty)(_._1).segments))
+      new PropertyValidation(p).$validate(v, c, path ++ p._propertyEdge.fold(Path.empty)(_._1))
     }
 
   def $sanitize(json:Json):Json = {
     ValidationPropertyCache.getInternal(contract).foldLeft(json){ (j, p) =>
-      dropValue(j, p.absolutePath.segments)
+      dropValue(j, Struct.getPath(p).segments)
     }
   }
 }
@@ -70,13 +70,13 @@ class PropertyValidation[T](val prop:Property[T]) extends AnyVal {
     ((value, currentState, prop) match {
       case (None, None, p: Expected[_]) =>
         Seq("Value required." -> path)
-      case (Some(v), c, p) if !p.isValidType(v) =>
+      case (Some(v), c, p) if !p._isValidType(v) =>
         Seq(s"Unexpected type '${v.getClass.getSimpleName}'." -> path)
       case (Some(v), c, b:BaseContract) =>
         new BaseContractValidation(b).$validate(v, c, path)
       case _ =>
         Seq.empty
-    }) ++ prop.validator.validate(value, currentState, path)
+    }) ++ prop._pathValidator.validate(value, currentState, path)
 }
 
 private object ValidationPropertyCache {
@@ -104,7 +104,7 @@ private object ValidationPropertyCache {
         p
       case None =>
         val ip = getProperties(contract).collect {
-          case p if isInternal(p.validator) => Seq(p)
+          case p if isInternal(p._pathValidator) => Seq(p)
           case p: BaseContract =>
             getInternal(p)
         }.flatten
