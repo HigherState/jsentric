@@ -1,7 +1,7 @@
 # jsentric
 Json contract patterns, validation, lenses and query
 
-    "io.higherstate" %% "jsentric" % "1.0-M1"
+    "io.higherstate" %% "jsentric" % "1.0.0"
     
     resolvers ++= Seq(
       "Sonatype releases" at "http://oss.sonatype.org/content/repositories/releases/",

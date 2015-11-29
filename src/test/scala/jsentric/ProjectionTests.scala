@@ -8,10 +8,10 @@ class ProjectionTests extends FunSuite with Matchers {
 
   test("Projection selection") {
     object Query1 extends Contract {
-      val field = \?[String]
-      val nested = new \\ {
-        val field2 = \[String]
-        val field3 = \?[Int]
+      val field = \?[String]("field")
+      val nested = new \\("nested") {
+        val field2 = \[String]("field2")
+        val field3 = \?[Int]("field3")
       }
     }
     val projection = Query1.field.$ & Query1.nested.field2.$

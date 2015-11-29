@@ -10,8 +10,8 @@ class ExtractorCompositorTests  extends FunSuite with Matchers {
   import ops.hlist.Tupler._
 
   object TestObj extends Contract {
-    val int = \[Int]
-    val bool = \[Boolean]
+    val int = \[Int]("int")
+    val bool = \[Boolean]("bool")
     val string = \[String]("string")
 
     lazy val composite = TestObj.string @: TestObj.int @: TestObj.bool

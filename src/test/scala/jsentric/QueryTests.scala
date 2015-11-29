@@ -10,9 +10,9 @@ class QueryTests extends FunSuite with Matchers {
 
   test("Existance/nonexistance of field") {
     object Query1 extends Contract {
-      val field = \?[String]
-      val nested = new \\ {
-        val field2 = \?[String]
+      val field = \?[String]("field")
+      val nested = new \\("nested") {
+        val field2 = \?[String]("field2")
       }
     }
     val query = Query1.field.$exists(true)
@@ -35,9 +35,9 @@ class QueryTests extends FunSuite with Matchers {
 
   test("Equality")   {
     object Query2 extends Contract {
-      val field = \?[String]
-      val nested = new \\ {
-        val field2 = \[Int]
+      val field = \?[String]("field")
+      val nested = new \\("nested") {
+        val field2 = \[Int]("field2")
       }
     }
     val query1 = Query2.field.$eq("TEST") || Query2.nested.field2.$eq(45)
@@ -118,9 +118,9 @@ class QueryTests extends FunSuite with Matchers {
 
   test("element match") {
     object Query3 extends Contract {
-      val doubles = \:[Long]
-      val nested = new \\ {
-        val strings = \:?[String]
+      val doubles = \:[Long]("doubles")
+      val nested = new \\("nested") {
+        val strings = \:?[String]("strings")
       }
     }
 
@@ -133,7 +133,7 @@ class QueryTests extends FunSuite with Matchers {
 
   test("boolean operators") {
     object Query4 extends Contract {
-      val value = \[Double]
+      val value = \[Double]("value")
     }
 
     val query1 = Query4.value.$gt(0) || Query4.value.$lt(-10)

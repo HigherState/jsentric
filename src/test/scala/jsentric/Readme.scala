@@ -10,18 +10,18 @@ class Readme {
     // //? expected, option object properties
    */
   object Order extends Contract {
-    val firstName = \[String](nonEmptyOrWhiteSpace)
-    val lastName = \[String](nonEmptyOrWhiteSpace)
-    val orderId = \?[Int](reserved && immutable)
+    val firstName = \[String]("firstName", nonEmptyOrWhiteSpace)
+    val lastName = \[String]("lastName", nonEmptyOrWhiteSpace)
+    val orderId = \?[Int]("orderId", reserved && immutable)
 
-    val email = new \\ {
-      val friendlyName = \?[String]
-      val address = \[String]
+    val email = new \\("email") {
+      val friendlyName = \?[String]("friendlyName")
+      val address = \[String]("address")
     }
-    val status = \?[String](in("pending", "processing", "sent") && reserved)
-    val notes = \?[String](internal)
+    val status = \?[String]("status", in("pending", "processing", "sent") && reserved)
+    val notes = \?[String]("notes", internal)
 
-    val orderLines = \:[(String, Int)](forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items")))
+    val orderLines = \:[(String, Int)]("orderLines", forall(custom[(String, Int)](ol => ol._2 >= 0, "Cannot order negative items")))
 
     import Composite._
     //Combine properties to make a composite pattern matcher
@@ -33,9 +33,9 @@ class Readme {
   //Create a new Json object
   val newOrder = Order.$create{o =>
     o.firstName.$set("John") ~
-    o.lastName.$set("Smith") ~
-    o.email.address.$set("johnSmith@test.com") ~
-    o.orderLines.$append("Socks" -> 3)
+      o.lastName.$set("Smith") ~
+      o.email.address.$set("johnSmith@test.com") ~
+      o.orderLines.$append("Socks" -> 3)
   }
 
   //validate a new json object
@@ -53,8 +53,8 @@ class Readme {
   val pending =
     Order{o =>
       o.orderId.$set(123) ~
-      o.status.$set("pending") ~
-      o.notes.$modify(maybe => Some(maybe.foldLeft("Order now pending.")(_ + _)))
+        o.status.$set("pending") ~
+        o.notes.$modify(maybe => Some(maybe.foldLeft("Order now pending.")(_ + _)))
     }(newOrder)
 
   //strip out any properties marked internal
@@ -82,13 +82,13 @@ class Readme {
   val processing = pending.delta(statusDelta)
 
   //Define subcontract for reusable or recursive structures
-  trait UserTimestamp {
-    val account = \[String]
-    val timestamp = \[Long]
+  trait UserTimestamp extends SubContract {
+    val account = \[String]("account")
+    val timestamp = \[Long]("timestamp")
   }
   object Element extends Contract {
-    val created = new \\(immutable) with UserTimestamp
-    val modified = new \\ with UserTimestamp
+    val created = new \\("created", immutable) with UserTimestamp
+    val modified = new \\("modified") with UserTimestamp
   }
 
   //try to force a match even if wrong type
