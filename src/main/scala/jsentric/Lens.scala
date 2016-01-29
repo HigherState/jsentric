@@ -73,6 +73,8 @@ sealed trait PropertyLens[T] extends Any with Functions {
       value.fold(j) { v =>
         setValue(Some(j), prop.absolutePath.segments, prop.codec.encode(v))
       }
+
+
 }
 
 class ExpectedLens[T](val prop: Expected[T]) extends AnyVal with PropertyLens[T] {
@@ -88,6 +90,9 @@ class ExpectedLens[T](val prop: Expected[T]) extends AnyVal with PropertyLens[T]
           insertValue(Some(j), p.absolutePath.segments, value)
       }
     }
+
+  def $forceDrop =
+    (j:Json) => dropValue(j, prop.absolutePath.segments)
 }
 
 class MaybeLens[T](val prop: Maybe[T]) extends AnyVal with PropertyLens[T] {
