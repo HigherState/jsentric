@@ -77,9 +77,9 @@ object Query {
       case ("$or", JArray(values)) =>
         values.flatMap(_.obj).exists(apply(value, _))
       case ("$eq", v) =>
-        value.exists(order.lift(_, v).contains(Ordering.EQ))
+        value.exists(x => order.lift(x -> v).contains(Ordering.EQ))
       case ("$ne", v) =>
-        !value.exists(order.lift(_, v).contains(Ordering.EQ))
+        !value.exists(x => order.lift(x -> v).contains(Ordering.EQ))
       case ("$regex" | "$options", _) =>
         query("$regex").collect{
           case JString(v) =>
@@ -93,17 +93,17 @@ object Query {
             ("(?i)" + v.replace("%", ".*")).r.pattern.matcher(s).matches
         }.getOrElse(false)
       case ("$lt", v) =>
-        value.exists(order.lift(_, v).contains(Ordering.LT))
+        value.exists(x => order.lift(x -> v).contains(Ordering.LT))
       case ("$gt", v) =>
-        value.exists(order.lift(_, v).contains(Ordering.GT))
+        value.exists(x => order.lift(x -> v).contains(Ordering.GT))
       case ("$lte", v) =>
-        value.exists(order.lift(_, v).exists(r => r == Ordering.LT || r == Ordering.EQ))
+        value.exists(x => order.lift(x -> v).exists(r => r == Ordering.LT || r == Ordering.EQ))
       case ("$gte", v) =>
-        value.exists(order.lift(_, v).exists(r => r == Ordering.GT || r == Ordering.EQ))
+        value.exists(x => order.lift(x -> v).exists(r => r == Ordering.GT || r == Ordering.EQ))
       case ("$in", JArray(values)) =>
-        value.exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
+        value.exists(j => values.exists(x => order.lift(x -> j).contains(Ordering.EQ)))
       case ("$nin", JArray(values)) =>
-        !value.exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ))) //nin doesnt require existence, as per mongodb
+        !value.exists(j => values.exists(x => order.lift(x -> j).contains(Ordering.EQ))) //nin doesnt require existence, as per mongodb
       case ("$exists", JBool(v)) =>
         value.isDefined == v
       case ("$not", v) =>
@@ -130,25 +130,25 @@ object Query {
       case !!(tree) =>
         !this(value, tree)
       case ?(Path(segments), "$eq", v) =>
-        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.EQ))
+        getValue(value, segments).exists(x => order.lift(x -> v).contains(Ordering.EQ))
       case ?(Path(segments), "$ne", v) =>
-        !getValue(value, segments).exists(order.lift(_, v).contains(Ordering.EQ))
+        !getValue(value, segments).exists(x => order.lift(x -> v).contains(Ordering.EQ))
       case /(Path(segments), regex) =>
         getValue(value, segments).flatMap(_.string).exists(s => regex.pattern.matcher(s).matches)
       case %(Path(segments), _, regex) =>
         getValue(value, segments).flatMap(_.string).exists(s => regex.pattern.matcher(s).matches)
       case ?(Path(segments), "$lt", v) =>
-        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.LT))
+        getValue(value, segments).exists(x => order.lift(x -> v).contains(Ordering.LT))
       case ?(Path(segments), "$gt", v) =>
-        getValue(value, segments).exists(order.lift(_, v).contains(Ordering.GT))
+        getValue(value, segments).exists(x => order.lift(x -> v).contains(Ordering.GT))
       case ?(Path(segments), "$lte", v) =>
-        getValue(value, segments).exists(order.lift(_, v).exists(r => r == Ordering.LT || r == Ordering.EQ))
+        getValue(value, segments).exists(x => order.lift(x -> v).exists(r => r == Ordering.LT || r == Ordering.EQ))
       case ?(Path(segments), "$gte", v) =>
-        getValue(value, segments).exists(order.lift(_, v).exists(r => r == Ordering.GT || r == Ordering.EQ))
+        getValue(value, segments).exists(x => order.lift(x -> v).exists(r => r == Ordering.GT || r == Ordering.EQ))
       case ?(Path(segments), "$in", JArray(values)) =>
-        getValue(value, segments).exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
+        getValue(value, segments).exists(j => values.exists(x => order.lift(x -> j).contains(Ordering.EQ)))
       case ?(Path(segments), "$nin", JArray(values)) =>
-        !getValue(value, segments).exists(j => values.exists(order.lift(_, j).contains(Ordering.EQ)))
+        !getValue(value, segments).exists(j => values.exists(x => order.lift(x -> j).contains(Ordering.EQ)))
       case ?(Path(segments), "$exists", JBool(v)) =>
         getValue(value, segments).nonEmpty == v
       case ∃(Path(segments), subQuery) =>

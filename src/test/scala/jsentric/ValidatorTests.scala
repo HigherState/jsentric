@@ -10,7 +10,7 @@ class ValidatorTests extends FunSuite with Matchers {
   import Jsentric._
 
   private def toSet(dis: \/[NonEmptyList[(String, Path)], Json]): \/[Set[(String, Path)], Json] =
-    dis.leftMap(_.list.toSet)
+    dis.leftMap(_.list.toList.toSet)
 
   test("Property validation") {
 

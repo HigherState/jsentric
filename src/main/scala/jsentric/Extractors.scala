@@ -13,9 +13,7 @@ object JObject {
 }
 object JDouble {
   def unapply(json:Json):Option[Double] =
-    json.number.collect {
-      case JsonDouble(d) => d
-    }
+    json.number.flatMap(_.toDouble)
 }
 object JLong {
   def unapply(json:Json):Option[Long] =

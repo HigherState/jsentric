@@ -82,8 +82,8 @@ trait Validators {
     def message(n: Number): String
 
     def maybeValid(path: Path) = {
-      case (Some(n), _) if n.isNumber && doubleFail(n.number.get.toDouble) =>
-        message(n.number.get.toDouble) -> path
+      case (Some(JDouble(n)), _) if doubleFail(n) =>
+        message(n) -> path
     }
   }
 

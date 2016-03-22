@@ -17,28 +17,28 @@ object QueryJsonb {
 
   def apply(field:String, query:Json): JbValid =
     query.obj.fold[JbValid](\/-(s"Value = ${escape(query.toString())}::jsonb")){ j =>
-      treeToPostgres(field)(QueryTree(j), false).map(_.mkString)
+      treeToPostgres(field)(QueryTree(j) -> false).map(_.mkString)
     }
 
   def apply(field:String, query:Tree): JbValid =
-    treeToPostgres(field)(query, false).map(_.mkString)
+    treeToPostgres(field)(query -> false).map(_.mkString)
 
 
   private def treeToPostgres(field:String):Function[(Tree, Boolean), NonEmptyList[(String, Path)] \/ Vector[String]] = {
     case (&(Seq(value)), g) =>
-      treeToPostgres(field)(value, false).map(_ ++ g.option(")"))
+      treeToPostgres(field)(value -> false).map(_ ++ g.option(")"))
     case (|(Seq(value)), g) =>
-      treeToPostgres(field)(value, false).map(_ ++ g.option(")"))
+      treeToPostgres(field)(value -> false).map(_ ++ g.option(")"))
     case (&(head +: tail), g) =>
-      builder(treeToPostgres(field)(head, false), treeToPostgres(field)(&(tail), true)) { (h, t) =>
+      builder(treeToPostgres(field)(head -> false), treeToPostgres(field)(&(tail) -> true)) { (h, t) =>
         ((!g).option("(") ++: h :+ " AND ") ++ t
       }
     case (|(head +: tail), g) =>
-      builder(treeToPostgres(field)(head, false), treeToPostgres(field)(&(tail), true)) { (h, t) =>
+      builder(treeToPostgres(field)(head -> false), treeToPostgres(field)(&(tail) -> true)) { (h, t) =>
         ((!g).option("(") ++: h :+ " OR ") ++ t
       }
     case (!!(tree), g) =>
-      treeToPostgres(field)(tree, false).map(v => "NOT (" +: v :+ ")")
+      treeToPostgres(field)(tree -> false).map(v => "NOT (" +: v :+ ")")
     //TODO empty Path
     case (/(path, regex), _) =>
       \/-("(" +: field +: " #>> '" +: toPath(path) +: "') ~ '" +: regex.toString +: Vector("'"))
