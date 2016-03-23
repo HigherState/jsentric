@@ -12,6 +12,7 @@ class ContractTests extends FunSuite with Matchers {
       val one = \[String]("one")
       val two = \?[Boolean]("two")
       val three = \![Int]("three", 3)
+      val four = \[Long]("four")
     }
 
     (Json("one" := "string", "two" := false) match {
@@ -63,6 +64,17 @@ class ContractTests extends FunSuite with Matchers {
 
     (jEmptyObject match {
       case Test.two(None) => true
+      case _ => false
+    }) should be (true)
+
+    val temp = Json("four" := 9223372036854775807L)
+    (Json("four" := 9223372036854775807L) match {
+      case Test.four(l) => true
+      case _ => false
+    }) should be (true)
+
+    (Json("four" := -9223372036854775808L) match {
+      case Test.four(l) => true
       case _ => false
     }) should be (true)
   }

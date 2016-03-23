@@ -161,13 +161,26 @@ trait PessimisticCodecs extends Codecs {
     optionDecoder(x => x.number.flatMap(_.toDouble).collect{ case f if f >= Float.MinValue && f <= Float.MaxValue => f.toFloat}, "Float")
 
   override implicit def IntDecodeJson: DecodeJson[Int] =
-    optionDecoder(x => x.number.flatMap(_.toDouble).collect{ case f if f >= Int.MinValue && f <= Int.MaxValue && f % 1 == 0 => f.toInt}, "Int")
+    optionDecoder(x => x.number.flatMap {
+      case JsonLong(l) =>
+        if (l >= Int.MinValue && l <= Int.MaxValue) Some(l.toInt)
+        else None
+      case n => n.toDouble.collect { case f if f >= Int.MinValue && f <= Int.MaxValue && f % 1 == 0 => f.toInt }
+    }, "Int")
 
   override implicit def LongDecodeJson: DecodeJson[Long] =
-    optionDecoder(x => x.number.flatMap(_.toDouble).collect{ case f if f >= Long.MinValue && f <= Long.MaxValue && f % 1 == 0 => f.toLong}, "Long")
+    optionDecoder(x => x.number.flatMap {
+      case JsonLong(l) => Some(l)
+      case n => n.toDouble.collect { case f if f >= Long.MinValue && f <= Long.MaxValue && f % 1 == 0 => f.toLong }
+    }, "Long")
 
   override implicit def ShortDecodeJson: DecodeJson[Short] =
-    optionDecoder(x => x.number.flatMap(_.toDouble).collect{ case f if f >= Short.MinValue && f <= Short.MaxValue && f % 1 == 0 => f.toShort}, "Short")
+    optionDecoder(x => x.number.flatMap {
+      case JsonLong(l) =>
+        if (l >= Short.MinValue && l <= Short.MaxValue) Some(l.toShort)
+        else None
+      case n => n.toDouble.collect { case f if f >= Short.MinValue && f <= Short.MaxValue && f % 1 == 0 => f.toShort }
+    }, "Short")
 
   override implicit def OptionDecodeJson[A](implicit e: DecodeJson[A]): DecodeJson[Option[A]] =
     DecodeJson {r =>

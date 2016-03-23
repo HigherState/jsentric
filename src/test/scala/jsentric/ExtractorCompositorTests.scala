@@ -21,7 +21,7 @@ class ExtractorCompositorTests  extends FunSuite with Matchers {
     val json = Json("int" := 1, "bool" := false, "string" := "Test")
 
     json match {
-      case TestObj.composite(s, i, b) =>
+      case TestObj.composite((s, i, b)) =>
         s should equal ("Test")
         i should equal (1)
         b should equal (false)
