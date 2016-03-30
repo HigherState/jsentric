@@ -30,8 +30,10 @@ object build extends Build {
     ),
     javacOptions ++= Seq("-target", "1.8", "-source", "1.8", "-Xlint:deprecation"),
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-core" % "7.2.1",
-      "io.argonaut" %% "argonaut" % "6.2-M1",
+      "org.scala-lang" % "scala-reflect" % "2.11.8",
+      "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+      "org.scalaz" %% "scalaz-core" % "7.1.7",
+      "io.argonaut" %% "argonaut" % "6.1",
       "com.chuusai" %% "shapeless" % "2.3.0",
       "joda-time" % "joda-time" % "2.9.2",
       "org.joda" % "joda-convert" % "1.8",
