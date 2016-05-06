@@ -1,12 +1,12 @@
 package jsentric
 
 import argonaut._
-import org.scalatest.{Matchers, FunSuite}
+import org.scalatest.{FunSuite, Matchers}
 import shapeless._
 
 class ExtractorCompositorTests  extends FunSuite with Matchers {
   import Jsentric._
-  import Composite._
+  import ApplicativeLens._
   import ops.hlist.Tupler._
 
   object TestObj extends Contract {

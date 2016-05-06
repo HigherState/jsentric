@@ -77,6 +77,8 @@ object QueryJsonb {
 
     case (∃(path, ?(Path(Seq()), "$eq", value)), _) =>
       \/-(field +: " @> '" +: toObject(path.segments, jArrayElements(value)) :+ "'::jsonb")
+    case (∃(path, &(Seq(?(subPath, "$eq", value)))), _) =>
+      \/-(field +: toElement(path) +: " @> " +: "'["  +: toObject(subPath.segments, value) :+ "]'")
     case (∃(path, _), _) =>
       -\/(NonEmptyList("Currently only equality is supported in element match." -> path))
     case (?(path, op, _), _) =>
@@ -113,6 +115,9 @@ object QueryJsonb {
     case head +: tail =>
       " -> '" +: escape(head) +: "'" +: toSearch(tail)
   }
+
+  private def toElement(path:Path):String =
+    path.segments.map(escape).map(s => s" -> '$s'").mkString("")
 
   private def getType:Function[(Json,Path), JbValid] = {
     case (j,_) if j.isNumber => \/-("number")

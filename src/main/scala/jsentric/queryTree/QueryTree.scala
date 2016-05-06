@@ -35,7 +35,7 @@ object QueryTree {
         Some(buildTree(v, path \ key))
       case (key, j) =>
         Some(?(path \ key, "$eq", j))
-    }.toSeq)
+    })
   }
 
   def partition(tree:Tree, paths:Set[Path]):(Option[Tree], Option[Tree]) = {

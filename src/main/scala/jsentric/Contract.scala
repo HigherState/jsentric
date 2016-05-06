@@ -37,9 +37,6 @@ trait SubContract {
 
 trait Unapplicable[T] {
   def unapply(j:Json):Option[T]
-
-  def @:[S, O](prev:Unapplicable[S])(implicit ev: Composite.Aux[Unapplicable[S] :: Unapplicable[T] :: HNil, S :: T :: HNil], tpl:Tupler.Aux[S :: T :: HNil, O]) =
-    JsonList(prev :: this.asInstanceOf[Unapplicable[T]] :: HNil, ev, tpl)
 }
 
 trait Property[T <: Any] extends SelfApply {
